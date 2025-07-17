@@ -45,29 +45,43 @@ mediplant/
 ├── app/
 │   ├── __init__.py
 │   ├── models.py
-│   ├── routes/
-│   │   ├── user.py
-│   │   ├── admin.py
-│   │   ├── product.py
-│   │   └── order.py
+│   ├── roles.py
+│   ├── auth.py
 │   ├── templates/
 │   │   ├── base.html
 │   │   ├── index.html
 │   │   ├── login.html
 │   │   ├── register.html
-│   │   ├── product_detail.html
-│   │   ├── cart.html
-│   │   ├── checkout.html
 │   │   ├── contact.html
 │   │   └── admin/
 │   │       ├── dashboard.html
-│   │       ├── add_product.html
-│   │       ├── manage_orders.html
-│   │       └── view_messages.html
-│   └── static/
-│       ├── css/
-│       ├── js/
-│       └── images/
+│   │       ├── users.html
+│   │       ├── products.html
+│   │       ├── orders.html
+│   │       ├── messages.html
+│   │   └── supplier/
+│   │       ├── add_plant.html
+│   │       ├── my_products.html
+│   │       ├── my_orders.html
+│   │   └── consumer/
+│   │       ├── catalog.html
+│   │       ├── cart.html
+│   │       ├── checkout.html
+│   │       ├── my_orders.html
+│   │       ├── product_detail.html
+│   ├── static/
+│   │   ├── css/
+│   │   ├── js/
+│   │   └── images/
+│   ├── routes/
+│   │   ├── auth.py
+│   │   ├── user.py
+│   │   ├── admin.py
+│   │   ├── supplier.py
+│   │   ├── consumer.py
+│   │   ├── order.py
+│   │   ├── product.py
+│   │   └── review.py
 ├── config.py
 ├── run.py
 ├── requirements.txt
