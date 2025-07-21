@@ -2,16 +2,94 @@
 
 ## Entity Relationship Diagram - MediPlant E-Commerce Platform
 
+### 🏗️ Core System Overview
+
 ```mermaid
 erDiagram
-    %% Core User Management
+    %% Core Entities Overview
+    USERS {
+        int id PK
+        varchar name
+        varchar email UK
+        varchar password_hash
+        int role_id FK
+        boolean is_active
+        boolean is_verified
+    }
+    
     ROLES {
         int id PK
-        enum name "admin, supplier, consumer"
+        enum name "admin,supplier,consumer"
         varchar description
+    }
+    
+    PRODUCTS {
+        int id PK
+        varchar name
+        varchar slug UK
+        int category_id FK
+        int supplier_id FK
+        decimal base_price
+        int stock_quantity
+        boolean is_active
+        decimal rating_average
+    }
+    
+    CATEGORIES {
+        int id PK
+        varchar name UK
+        varchar slug UK
+        int parent_id FK
+        boolean is_active
+    }
+    
+    ORDERS {
+        int id PK
+        varchar order_number UK
+        int user_id FK
+        int supplier_id FK
+        enum status "pending,confirmed,shipped,delivered"
+        decimal total_amount
         timestamp created_at
     }
     
+    ORDER_ITEMS {
+        int id PK
+        int order_id FK
+        int product_id FK
+        int quantity
+        decimal unit_price
+        decimal total_price
+    }
+    
+    PRODUCT_REVIEWS {
+        int id PK
+        int product_id FK
+        int user_id FK
+        int rating "1-5"
+        text comment
+        boolean is_verified
+    }
+    
+    %% Core Relationships
+    ROLES ||--o{ USERS : has
+    USERS ||--o{ PRODUCTS : supplies
+    CATEGORIES ||--o{ PRODUCTS : categorizes
+    CATEGORIES ||--o{ CATEGORIES : parent
+    USERS ||--o{ ORDERS : places
+    USERS ||--o{ ORDERS : fulfills
+    ORDERS ||--o{ ORDER_ITEMS : contains
+    PRODUCTS ||--o{ ORDER_ITEMS : ordered
+    PRODUCTS ||--o{ PRODUCT_REVIEWS : reviewed
+    USERS ||--o{ PRODUCT_REVIEWS : writes
+```
+
+---
+
+### 👥 User Management Module
+
+```mermaid
+erDiagram
     USERS {
         int id PK
         varchar name
@@ -22,45 +100,32 @@ erDiagram
         boolean is_active
         boolean is_verified
         varchar profile_image
-        timestamp date_joined
-        timestamp last_login
+    }
+    
+    ROLES {
+        int id PK
+        enum name "admin,supplier,consumer"
+        varchar description
     }
     
     SUPPLIER_PROFILES {
         int id PK
-        int user_id FK,UK
+        int user_id FK
         varchar business_name
         varchar business_license
-        varchar tax_number
-        text description
-        varchar website
-        text address
-        varchar city
-        varchar state
-        varchar postal_code
-        varchar country
         boolean is_approved
-        timestamp approval_date
         decimal rating
-        decimal total_sales
         decimal commission_rate
-        timestamp created_at
     }
     
     USER_ADDRESSES {
         int id PK
         int user_id FK
-        enum address_type "home, work, other"
-        varchar full_name
-        varchar phone
+        enum type "home,work,other"
         varchar address_line1
-        varchar address_line2
         varchar city
         varchar state
-        varchar postal_code
-        varchar country
         boolean is_default
-        timestamp created_at
     }
     
     EMAIL_VERIFICATIONS {
@@ -69,72 +134,54 @@ erDiagram
         varchar token
         datetime expires_at
         boolean is_used
-        timestamp created_at
     }
     
-    PASSWORD_RESETS {
+    %% Relationships
+    ROLES ||--o{ USERS : has
+    USERS ||--o| SUPPLIER_PROFILES : extends
+    USERS ||--o{ USER_ADDRESSES : has
+    USERS ||--o{ EMAIL_VERIFICATIONS : verifies
+```
+
+---
+
+### 🛍️ Product Catalog Module
+
+```mermaid
+erDiagram
+    PRODUCTS {
         int id PK
-        int user_id FK
-        varchar token
-        datetime expires_at
-        boolean is_used
-        timestamp created_at
+        varchar name
+        varchar slug UK
+        int category_id FK
+        int supplier_id FK
+        varchar sku UK
+        text description
+        decimal base_price
+        decimal discount_price
+        int stock_quantity
+        boolean is_active
+        boolean is_featured
+        decimal rating_average
+        int sales_count
     }
     
-    %% Product Catalog
     CATEGORIES {
         int id PK
         varchar name UK
         varchar slug UK
         text description
         int parent_id FK
-        varchar image_url
         boolean is_active
         int sort_order
-        timestamp created_at
-    }
-    
-    PRODUCTS {
-        int id PK
-        varchar name
-        varchar slug UK
-        varchar scientific_name
-        int category_id FK
-        int supplier_id FK
-        varchar sku UK
-        text description
-        varchar short_description
-        text benefits
-        text usage_instructions
-        text care_instructions
-        text warnings
-        decimal base_price
-        decimal discount_price
-        int stock_quantity
-        int min_order_quantity
-        int max_order_quantity
-        decimal weight
-        varchar dimensions
-        boolean is_active
-        boolean is_featured
-        varchar meta_title
-        varchar meta_description
-        int views_count
-        int sales_count
-        decimal rating_average
-        int rating_count
-        timestamp created_at
-        timestamp updated_at
     }
     
     PRODUCT_IMAGES {
         int id PK
         int product_id FK
         varchar image_url
-        varchar alt_text
         boolean is_primary
         int sort_order
-        timestamp created_at
     }
     
     PRODUCT_VARIANTS {
@@ -143,11 +190,8 @@ erDiagram
         varchar name
         varchar sku UK
         decimal price
-        decimal discount_price
         int stock_quantity
-        decimal weight
         boolean is_active
-        timestamp created_at
     }
     
     PRODUCT_ATTRIBUTES {
@@ -157,7 +201,20 @@ erDiagram
         varchar attribute_value
     }
     
-    %% Shopping & Orders
+    %% Relationships
+    CATEGORIES ||--o{ CATEGORIES : parent
+    CATEGORIES ||--o{ PRODUCTS : categorizes
+    PRODUCTS ||--o{ PRODUCT_IMAGES : has
+    PRODUCTS ||--o{ PRODUCT_VARIANTS : has
+    PRODUCTS ||--o{ PRODUCT_ATTRIBUTES : has
+```
+
+---
+
+### 🛒 Shopping & Order Management
+
+```mermaid
+erDiagram
     SHOPPING_CART {
         int id PK
         int user_id FK
@@ -165,7 +222,6 @@ erDiagram
         int variant_id FK
         int quantity
         timestamp created_at
-        timestamp updated_at
     }
     
     WISHLISTS {
@@ -175,49 +231,20 @@ erDiagram
         timestamp created_at
     }
     
-    COUPONS {
-        int id PK
-        varchar code UK
-        varchar name
-        text description
-        enum discount_type "percentage, fixed"
-        decimal discount_value
-        decimal minimum_amount
-        decimal maximum_discount
-        int usage_limit
-        int used_count
-        boolean is_active
-        datetime valid_from
-        datetime valid_until
-        int created_by FK
-        timestamp created_at
-    }
-    
     ORDERS {
         int id PK
         varchar order_number UK
         int user_id FK
         int supplier_id FK
-        enum status "pending, confirmed, processing, shipped, delivered, cancelled, refunded"
-        enum payment_status "pending, paid, failed, refunded"
-        enum payment_method "razorpay, paypal, stripe, cod"
-        varchar payment_id
+        enum status "pending,confirmed,processing,shipped,delivered,cancelled"
+        enum payment_status "pending,paid,failed,refunded"
+        enum payment_method "razorpay,paypal,stripe,cod"
         decimal subtotal
         decimal tax_amount
         decimal shipping_amount
-        decimal discount_amount
         decimal total_amount
-        int coupon_id FK
-        varchar coupon_code
         json shipping_address
-        json billing_address
         varchar tracking_number
-        timestamp shipped_at
-        timestamp delivered_at
-        text order_notes
-        text admin_notes
-        timestamp created_at
-        timestamp updated_at
     }
     
     ORDER_ITEMS {
@@ -229,8 +256,18 @@ erDiagram
         decimal unit_price
         decimal total_price
         varchar product_name
-        varchar product_sku
-        int supplier_id FK
+    }
+    
+    COUPONS {
+        int id PK
+        varchar code UK
+        varchar name
+        enum discount_type "percentage,fixed"
+        decimal discount_value
+        decimal minimum_amount
+        boolean is_active
+        datetime valid_from
+        datetime valid_until
     }
     
     ORDER_TRACKING {
@@ -242,7 +279,18 @@ erDiagram
         timestamp created_at
     }
     
-    %% Reviews & Ratings
+    %% Relationships
+    ORDERS ||--o{ ORDER_ITEMS : contains
+    ORDERS ||--o{ ORDER_TRACKING : tracked
+    COUPONS ||--o{ ORDERS : applied_to
+```
+
+---
+
+### ⭐ Reviews & Communication
+
+```mermaid
+erDiagram
     PRODUCT_REVIEWS {
         int id PK
         int product_id FK
@@ -254,8 +302,6 @@ erDiagram
         boolean is_verified
         boolean is_approved
         int helpful_count
-        timestamp created_at
-        timestamp updated_at
     }
     
     REVIEW_HELPFULNESS {
@@ -263,24 +309,17 @@ erDiagram
         int review_id FK
         int user_id FK
         boolean is_helpful
-        timestamp created_at
     }
     
-    %% Communication
     CONTACT_MESSAGES {
         int id PK
         varchar name
         varchar email
-        varchar phone
         varchar subject
         text message
         int user_id FK
-        enum status "new, in_progress, resolved, closed"
-        enum priority "low, medium, high, urgent"
+        enum status "new,in_progress,resolved,closed"
         int assigned_to FK
-        text admin_notes
-        timestamp created_at
-        timestamp updated_at
     }
     
     MESSAGES {
@@ -290,22 +329,35 @@ erDiagram
         varchar subject
         text message
         boolean is_read
-        enum message_type "general, order_inquiry, product_inquiry, support"
-        int related_order_id FK
-        int related_product_id FK
-        timestamp created_at
+        enum type "general,order_inquiry,product_inquiry,support"
     }
     
-    %% Analytics
+    NOTIFICATIONS {
+        int id PK
+        int user_id FK
+        varchar title
+        text message
+        enum type "order,product,payment,system,promotion"
+        boolean is_read
+        varchar action_url
+    }
+    
+    %% Relationships
+    PRODUCT_REVIEWS ||--o{ REVIEW_HELPFULNESS : voted_on
+```
+
+---
+
+### 📊 Analytics & System Management
+
+```mermaid
+erDiagram
     PAGE_VIEWS {
         int id PK
-        enum page_type "product, category, home, search"
+        enum page_type "product,category,home,search"
         int page_id
         int user_id FK
         varchar ip_address
-        text user_agent
-        varchar referer
-        varchar session_id
         timestamp created_at
     }
     
@@ -318,28 +370,13 @@ erDiagram
         timestamp created_at
     }
     
-    %% Notifications
-    NOTIFICATIONS {
-        int id PK
-        int user_id FK
-        varchar title
-        text message
-        enum notification_type "order, product, payment, system, promotion"
-        boolean is_read
-        varchar action_url
-        timestamp created_at
-    }
-    
-    %% System
     SITE_SETTINGS {
         int id PK
         varchar setting_key UK
         text setting_value
-        enum setting_type "string, integer, decimal, boolean, json"
+        enum setting_type "string,integer,decimal,boolean,json"
         text description
         boolean is_public
-        int updated_by FK
-        timestamp updated_at
     }
     
     AUDIT_LOGS {
@@ -351,101 +388,68 @@ erDiagram
         json old_values
         json new_values
         varchar ip_address
-        text user_agent
         timestamp created_at
     }
-    
-    %% Relationships
-    ROLES ||--o{ USERS : "has role"
-    USERS ||--o| SUPPLIER_PROFILES : "has profile"
-    USERS ||--o{ USER_ADDRESSES : "has addresses"
-    USERS ||--o{ EMAIL_VERIFICATIONS : "has verifications"
-    USERS ||--o{ PASSWORD_RESETS : "has resets"
-    
-    CATEGORIES ||--o{ CATEGORIES : "parent category"
-    CATEGORIES ||--o{ PRODUCTS : "belongs to"
-    USERS ||--o{ PRODUCTS : "supplies"
-    
-    PRODUCTS ||--o{ PRODUCT_IMAGES : "has images"
-    PRODUCTS ||--o{ PRODUCT_VARIANTS : "has variants"
-    PRODUCTS ||--o{ PRODUCT_ATTRIBUTES : "has attributes"
-    
-    USERS ||--o{ SHOPPING_CART : "owns cart"
-    PRODUCTS ||--o{ SHOPPING_CART : "in cart"
-    PRODUCT_VARIANTS ||--o{ SHOPPING_CART : "variant in cart"
-    
-    USERS ||--o{ WISHLISTS : "has wishlist"
-    PRODUCTS ||--o{ WISHLISTS : "in wishlist"
-    
-    USERS ||--o{ COUPONS : "created by"
-    COUPONS ||--o{ ORDERS : "applied to"
-    
-    USERS ||--o{ ORDERS : "customer"
-    USERS ||--o{ ORDERS : "supplier"
-    ORDERS ||--o{ ORDER_ITEMS : "contains"
-    PRODUCTS ||--o{ ORDER_ITEMS : "ordered"
-    PRODUCT_VARIANTS ||--o{ ORDER_ITEMS : "variant ordered"
-    
-    ORDERS ||--o{ ORDER_TRACKING : "tracked"
-    USERS ||--o{ ORDER_TRACKING : "updated by"
-    
-    PRODUCTS ||--o{ PRODUCT_REVIEWS : "reviewed"
-    USERS ||--o{ PRODUCT_REVIEWS : "reviewer"
-    ORDERS ||--o{ PRODUCT_REVIEWS : "verified purchase"
-    
-    PRODUCT_REVIEWS ||--o{ REVIEW_HELPFULNESS : "voted on"
-    USERS ||--o{ REVIEW_HELPFULNESS : "voter"
-    
-    USERS ||--o{ CONTACT_MESSAGES : "sender"
-    USERS ||--o{ CONTACT_MESSAGES : "assigned to"
-    
-    USERS ||--o{ MESSAGES : "sender"
-    USERS ||--o{ MESSAGES : "recipient"
-    ORDERS ||--o{ MESSAGES : "related to"
-    PRODUCTS ||--o{ MESSAGES : "related to"
-    
-    USERS ||--o{ PAGE_VIEWS : "viewer"
-    USERS ||--o{ SEARCH_QUERIES : "searcher"
-    USERS ||--o{ NOTIFICATIONS : "recipient"
-    
-    USERS ||--o{ SITE_SETTINGS : "updated by"
-    USERS ||--o{ AUDIT_LOGS : "performed action"
 ```
 
-## 📊 Table Relationships Summary
+---
 
-### Core Entities:
-1. **Users** - Central entity for all user types (Admin, Supplier, Consumer)
-2. **Products** - Main product catalog with variants and attributes
-3. **Orders** - Transaction records with items and tracking
-4. **Categories** - Hierarchical product categorization
+## � Database Structure Summary
 
-### Key Relationships:
-- **One-to-Many**: User → Products (Supplier relationship)
-- **One-to-Many**: Category → Products
-- **One-to-Many**: Product → Product Variants
-- **Many-to-Many**: Users ↔ Products (via Cart, Wishlist, Reviews)
-- **One-to-Many**: Order → Order Items
-- **One-to-Many**: User → Orders (Customer relationship)
+### 🎯 **Modular Design Benefits:**
 
-### Support Systems:
-- **Authentication**: Email verification, password resets
-- **Communication**: Messages, contact forms, notifications
-- **Analytics**: Page views, search queries, audit logs
-- **Configuration**: Site settings, coupons, supplier profiles
+✅ **Easy to Understand** - Each diagram focuses on specific functionality  
+✅ **Clear Relationships** - Simplified connections between related tables  
+✅ **Maintainable** - Updates can be made to individual modules  
+✅ **Scalable** - New features can be added as separate modules  
 
-## 🔑 Key Design Principles:
+### 📊 **Module Overview:**
 
-1. **Role-Based Access Control (RBAC)** - Three distinct user roles
-2. **Multi-Vendor Support** - Suppliers can manage their own products
-3. **Comprehensive E-Commerce** - Full cart, checkout, and order management
-4. **Audit Trail** - Complete activity logging for security
-5. **Scalable Design** - Indexed tables for performance optimization
-6. **Flexible Configuration** - Site settings for runtime configuration
+| Module | Tables | Purpose |
+|--------|--------|---------|
+| **Core System** | 7 tables | Main entities and relationships |
+| **User Management** | 5 tables | Authentication, profiles, addresses |
+| **Product Catalog** | 5 tables | Products, categories, variants, images |
+| **Shopping & Orders** | 6 tables | Cart, orders, payments, tracking |
+| **Reviews & Communication** | 5 tables | Reviews, messages, notifications |
+| **Analytics & System** | 4 tables | Analytics, settings, audit logs |
 
-## 📈 Performance Optimizations:
+### 🔑 **Key Relationships:**
 
-- Strategic indexes on frequently queried fields
-- Denormalized fields for faster queries (supplier_id in order_items)
-- JSON fields for flexible data storage (addresses, audit logs)
-- Separate tables for analytics to avoid impacting core operations
+#### **Core Entity Relationships:**
+- `USERS` ↔ `ROLES` (Many-to-One)
+- `USERS` → `PRODUCTS` (One-to-Many) *[Supplier relationship]*
+- `CATEGORIES` → `PRODUCTS` (One-to-Many)
+- `PRODUCTS` → `PRODUCT_VARIANTS` (One-to-Many)
+- `ORDERS` → `ORDER_ITEMS` (One-to-Many)
+
+#### **Cross-Module Relationships:**
+- `USERS` → `ORDERS` (Customer & Supplier relationships)
+- `PRODUCTS` → `ORDER_ITEMS` (Product ordering)
+- `USERS` → `PRODUCT_REVIEWS` (Review system)
+- `ORDERS` → `PRODUCT_REVIEWS` (Verified purchases)
+
+### 🏗️ **Database Design Principles:**
+
+1. **📱 Modular Architecture** - Logical separation of concerns
+2. **🔐 Security First** - Audit trails and user verification
+3. **⚡ Performance Optimized** - Strategic indexing and denormalization
+4. **🔄 Scalable Design** - Support for growth and new features
+5. **🛡️ Data Integrity** - Foreign key constraints and validation
+
+### � **Implementation Notes:**
+
+- **Indexes**: Strategic indexes on frequently queried fields (user_id, product_id, order_id)
+- **JSON Fields**: Flexible storage for addresses and audit data
+- **Enums**: Constrained values for status fields and categories
+- **Timestamps**: Comprehensive tracking of create/update times
+- **Soft Deletes**: Use `is_active` flags instead of hard deletes where appropriate
+
+### 🚀 **Development Workflow:**
+
+1. Start with **Core System** module for basic functionality
+2. Implement **User Management** for authentication
+3. Build **Product Catalog** for inventory management
+4. Add **Shopping & Orders** for e-commerce features
+5. Integrate **Reviews & Communication** for user engagement
+6. Deploy **Analytics & System** for monitoring and insights
