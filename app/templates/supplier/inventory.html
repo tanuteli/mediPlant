@@ -1,0 +1,509 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory Management - MediPlant Supplier{% endblock %}
+
+{% block extra_css %}
+<style>
+    .inventory-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 40px 0;
+        margin-bottom: 30px;
+    }
+    
+    .inventory-table {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .table {
+        margin-bottom: 0;
+    }
+    
+    .table th {
+        background: var(--secondary-color);
+        color: white;
+        font-weight: 600;
+        padding: 15px;
+        border: none;
+    }
+    
+    .table td {
+        padding: 15px;
+        vertical-align: middle;
+        border-color: #f0f0f0;
+    }
+    
+    .product-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .product-image {
+        width: 50px;
+        height: 50px;
+        border-radius: 8px;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--secondary-color);
+        font-size: 1.2rem;
+    }
+    
+    .product-details h6 {
+        margin: 0 0 5px 0;
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+    
+    .product-details small {
+        color: #666;
+    }
+    
+    .stock-status {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-align: center;
+    }
+    
+    .stock-high {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .stock-medium {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .stock-low {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .stock-out {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+    
+    .quick-update {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .stock-input {
+        width: 80px;
+        padding: 5px 8px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        text-align: center;
+    }
+    
+    .update-btn {
+        background: var(--secondary-color);
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.8rem;
+        cursor: pointer;
+    }
+    
+    .update-btn:hover {
+        background: var(--primary-color);
+    }
+    
+    .bulk-actions {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .action-btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: 2px solid var(--secondary-color);
+        background: white;
+        color: var(--secondary-color);
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .action-btn:hover {
+        background: var(--secondary-color);
+        color: white;
+    }
+    
+    .action-btn.primary {
+        background: var(--secondary-color);
+        color: white;
+    }
+    
+    .action-btn.primary:hover {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+    }
+    
+    .filter-bar {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .filter-row {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .filter-select {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 10px 15px;
+        background: white;
+        min-width: 150px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .empty-icon {
+        font-size: 4rem;
+        color: #bdc3c7;
+        margin-bottom: 20px;
+    }
+    
+    @media (max-width: 768px) {
+        .inventory-table {
+            overflow-x: auto;
+        }
+        
+        .filter-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .action-buttons {
+            justify-content: center;
+        }
+        
+        .quick-update {
+            flex-direction: column;
+            gap: 5px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inventory-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">Inventory Management</h1>
+                <p class="mb-0">Monitor and update your product stock levels</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="d-flex align-items-center justify-content-md-end">
+                    <i class="fas fa-boxes me-2"></i>
+                    <span>{{ products|length }} Products</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Bulk Actions -->
+    <div class="bulk-actions">
+        <h5 class="mb-3">Quick Actions</h5>
+        <div class="action-buttons">
+            <a href="{{ url_for('supplier.add_product') }}" class="action-btn primary">
+                <i class="fas fa-plus me-2"></i>Add New Product
+            </a>
+            <button class="action-btn" onclick="exportInventory()">
+                <i class="fas fa-download me-2"></i>Export CSV
+            </button>
+            <button class="action-btn" onclick="bulkUpdate()">
+                <i class="fas fa-edit me-2"></i>Bulk Update
+            </button>
+            <button class="action-btn" onclick="lowStockReport()">
+                <i class="fas fa-exclamation-triangle me-2"></i>Low Stock Report
+            </button>
+        </div>
+    </div>
+    
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <form method="GET" action="{{ url_for('supplier.inventory') }}">
+            <div class="filter-row">
+                <select name="status" class="filter-select">
+                    <option value="">All Stock Levels</option>
+                    <option value="high" {{ 'selected' if request.args.get('status') == 'high' }}>High Stock (50+)</option>
+                    <option value="medium" {{ 'selected' if request.args.get('status') == 'medium' }}>Medium Stock (20-49)</option>
+                    <option value="low" {{ 'selected' if request.args.get('status') == 'low' }}>Low Stock (1-19)</option>
+                    <option value="out" {{ 'selected' if request.args.get('status') == 'out' }}>Out of Stock</option>
+                </select>
+                
+                <select name="category" class="filter-select">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {{ 'selected' if request.args.get('category') == category.id|string }}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Inventory Table -->
+    {% if products %}
+    <div class="inventory-table">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Current Stock</th>
+                    <th>Status</th>
+                    <th>Price</th>
+                    <th>Quick Update</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>
+                        <div class="product-info">
+                            <div class="product-image">
+                                {% if product.images and product.images[0] %}
+                                    <img src="{{ product.images[0].image_url }}" alt="{{ product.name }}" class="img-fluid">
+                                {% else %}
+                                    <i class="fas fa-pills"></i>
+                                {% endif %}
+                            </div>
+                            <div class="product-details">
+                                <h6>{{ product.name }}</h6>
+                                <small>{{ product.category.name if product.category else 'Uncategorized' }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <code>{{ product.sku or product.id }}</code>
+                    </td>
+                    <td>
+                        <strong>{{ product.stock_quantity or 0 }}</strong> units
+                    </td>
+                    <td>
+                        {% set stock = product.stock_quantity or 0 %}
+                        {% if stock == 0 %}
+                            <span class="stock-status stock-out">Out of Stock</span>
+                        {% elif stock < 20 %}
+                            <span class="stock-status stock-low">Low Stock</span>
+                        {% elif stock < 50 %}
+                            <span class="stock-status stock-medium">Medium Stock</span>
+                        {% else %}
+                            <span class="stock-status stock-high">High Stock</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        ₹{{ product.base_price or product.price or 0 }}
+                    </td>
+                    <td>
+                        <div class="quick-update">
+                            <input type="number" class="stock-input" 
+                                   value="{{ product.stock_quantity or 0 }}" 
+                                   id="stock_{{ product.id }}"
+                                   min="0">
+                            <button class="update-btn" data-product-id="{{ product.id }}" onclick="updateStock(this.dataset.productId)">
+                                Update
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                    type="button" data-bs-toggle="dropdown">
+                                Actions
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('supplier.edit_product', product_id=product.id) }}">
+                                        <i class="fas fa-edit me-2"></i>Edit Product
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('product.detail', product_id=product.id) }}">
+                                        <i class="fas fa-eye me-2"></i>View Product
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="#" data-product-id="{{ product.id }}" onclick="setReorderLevel(this.dataset.productId)">
+                                        <i class="fas fa-bell me-2"></i>Set Reorder Level
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#" data-product-id="{{ product.id }}" onclick="viewStockHistory(this.dataset.productId)">
+                                        <i class="fas fa-history me-2"></i>Stock History
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-boxes"></i>
+        </div>
+        <h3 class="mb-3">No Products Found</h3>
+        <p class="text-muted mb-4">
+            {% if request.args.get('status') or request.args.get('category') %}
+                No products match your current filters.
+            {% else %}
+                You haven't added any products yet. Start building your inventory!
+            {% endif %}
+        </p>
+        {% if not request.args.get('status') and not request.args.get('category') %}
+        <a href="{{ url_for('supplier.add_product') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus me-2"></i>Add Your First Product
+        </a>
+        {% else %}
+        <a href="{{ url_for('supplier.inventory') }}" class="btn btn-secondary">
+            <i class="fas fa-times me-2"></i>Clear Filters
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updateStock(productId) {
+        const stockInput = document.getElementById(`stock_${productId}`);
+        const newStock = parseInt(stockInput.value);
+        
+        if (isNaN(newStock) || newStock < 0) {
+            showNotification('Please enter a valid stock quantity', 'warning');
+            return;
+        }
+        
+        fetch(`/supplier/products/${productId}/update-stock`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                stock_quantity: newStock
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Stock updated successfully', 'success');
+                // Update the status badge
+                location.reload();
+            } else {
+                showNotification(data.message || 'Error updating stock', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error updating stock', 'error');
+            console.error('Error:', error);
+        });
+    }
+    
+    function exportInventory() {
+        window.location.href = '/supplier/inventory/export';
+    }
+    
+    function bulkUpdate() {
+        showNotification('Bulk update feature coming soon!', 'info');
+    }
+    
+    function lowStockReport() {
+        window.location.href = '/supplier/inventory?status=low';
+    }
+    
+    function setReorderLevel(productId) {
+        const level = prompt('Enter reorder level (minimum stock before alert):');
+        if (level && !isNaN(level) && level >= 0) {
+            // Implement reorder level setting
+            showNotification('Reorder level feature coming soon!', 'info');
+        }
+    }
+    
+    function viewStockHistory(productId) {
+        showNotification('Stock history feature coming soon!', 'info');
+    }
+    
+    function getCsrfToken() {
+        return document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+    }
+    
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 350px;';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+    
+    // Auto-submit filter form on change
+    document.querySelectorAll('.filter-select').forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+</script>
+{% endblock %}

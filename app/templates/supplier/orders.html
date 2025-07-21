@@ -1,0 +1,682 @@
+{% extends "base.html" %}
+
+{% block title %}Orders - MediPlant Supplier{% endblock %}
+
+{% block extra_css %}
+<style>
+    .orders-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 40px 0;
+        margin-bottom: 30px;
+    }
+    
+    .filter-tabs {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .tab-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+    
+    .tab-btn {
+        padding: 10px 20px;
+        border: 2px solid #e0e0e0;
+        background: white;
+        border-radius: 25px;
+        text-decoration: none;
+        color: #666;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .tab-btn.active {
+        background: var(--secondary-color);
+        border-color: var(--secondary-color);
+        color: white;
+    }
+    
+    .tab-btn:hover {
+        border-color: var(--secondary-color);
+        color: var(--secondary-color);
+    }
+    
+    .tab-btn.active:hover {
+        color: white;
+    }
+    
+    .tab-count {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        margin-left: 8px;
+    }
+    
+    .orders-list {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .order-item {
+        border-bottom: 1px solid #f0f0f0;
+        padding: 25px;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .order-item:last-child {
+        border-bottom: none;
+    }
+    
+    .order-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+    
+    .order-info h5 {
+        color: var(--primary-color);
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .order-meta {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .order-status {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-align: center;
+        min-width: 100px;
+    }
+    
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .status-confirmed {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+    
+    .status-shipped {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .status-delivered {
+        background: #e2e3e5;
+        color: #383d41;
+        border: 1px solid #d6d8db;
+    }
+    
+    .status-cancelled {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .order-products {
+        margin: 15px 0;
+    }
+    
+    .product-summary {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+    
+    .product-image {
+        width: 50px;
+        height: 50px;
+        border-radius: 8px;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        color: var(--secondary-color);
+    }
+    
+    .product-details {
+        flex: 1;
+    }
+    
+    .product-name {
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 3px;
+    }
+    
+    .product-meta {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .order-total {
+        text-align: right;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--secondary-color);
+    }
+    
+    .order-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 15px;
+    }
+    
+    .action-btn {
+        padding: 8px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-view {
+        background: #3498db;
+        color: white;
+    }
+    
+    .btn-view:hover {
+        background: #2980b9;
+        color: white;
+    }
+    
+    .btn-update {
+        background: #f39c12;
+        color: white;
+    }
+    
+    .btn-update:hover {
+        background: #e67e22;
+        color: white;
+    }
+    
+    .btn-cancel {
+        background: #e74c3c;
+        color: white;
+    }
+    
+    .btn-cancel:hover {
+        background: #c0392b;
+        color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .empty-icon {
+        font-size: 4rem;
+        color: #bdc3c7;
+        margin-bottom: 20px;
+    }
+    
+    .pagination-wrapper {
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    
+    .search-bar {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .search-input {
+        flex: 1;
+        min-width: 250px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 10px 15px;
+    }
+    
+    .date-filter {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .date-input {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+    
+    @media (max-width: 768px) {
+        .order-header {
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .order-meta {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .tab-buttons {
+            justify-content: center;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            text-align: center;
+            min-width: 120px;
+        }
+        
+        .search-bar {
+            flex-direction: column;
+        }
+        
+        .search-input {
+            min-width: auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="orders-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">Order Management</h1>
+                <p class="mb-0">Track and manage all your customer orders</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="d-flex align-items-center justify-content-md-end">
+                    <i class="fas fa-shopping-cart me-2"></i>
+                    <span>{{ orders.total if orders else 0 }} Total Orders</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+        <div class="tab-buttons">
+            <a href="{{ url_for('supplier.orders') }}" 
+               class="tab-btn {{ 'active' if not current_status }}">
+                All Orders
+                <span class="tab-count">{{ order_counts.total or 0 }}</span>
+            </a>
+            <a href="{{ url_for('supplier.orders', status='pending') }}" 
+               class="tab-btn {{ 'active' if current_status == 'pending' }}">
+                Pending
+                <span class="tab-count">{{ order_counts.pending or 0 }}</span>
+            </a>
+            <a href="{{ url_for('supplier.orders', status='confirmed') }}" 
+               class="tab-btn {{ 'active' if current_status == 'confirmed' }}">
+                Confirmed
+                <span class="tab-count">{{ order_counts.confirmed or 0 }}</span>
+            </a>
+            <a href="{{ url_for('supplier.orders', status='shipped') }}" 
+               class="tab-btn {{ 'active' if current_status == 'shipped' }}">
+                Shipped
+                <span class="tab-count">{{ order_counts.shipped or 0 }}</span>
+            </a>
+            <a href="{{ url_for('supplier.orders', status='delivered') }}" 
+               class="tab-btn {{ 'active' if current_status == 'delivered' }}">
+                Delivered
+                <span class="tab-count">{{ order_counts.delivered or 0 }}</span>
+            </a>
+        </div>
+        
+        <!-- Search and Filters -->
+        <form method="GET" action="{{ url_for('supplier.orders') }}">
+            {% if current_status %}
+            <input type="hidden" name="status" value="{{ current_status }}">
+            {% endif %}
+            <div class="search-bar">
+                <input type="text" name="search" class="search-input" 
+                       placeholder="Search by order ID, customer name, or product..."
+                       value="{{ request.args.get('search', '') }}">
+                
+                <div class="date-filter">
+                    <span class="text-muted">From:</span>
+                    <input type="date" name="date_from" class="date-input" 
+                           value="{{ request.args.get('date_from', '') }}">
+                    <span class="text-muted">To:</span>
+                    <input type="date" name="date_to" class="date-input" 
+                           value="{{ request.args.get('date_to', '') }}">
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Orders List -->
+    {% if orders and orders.items %}
+    <div class="orders-list">
+        {% for order in orders.items %}
+        <div class="order-item">
+            <div class="order-header">
+                <div class="order-info">
+                    <h5>Order #{{ order.id }}</h5>
+                    <div class="order-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-user"></i>
+                            {{ order.user.name if order.user else 'Guest Customer' }}
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-calendar"></i>
+                            {{ order.created_at.strftime('%d %b %Y, %I:%M %p') }}
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-box"></i>
+                            {{ order.items|length if order.items else 0 }} item(s)
+                        </div>
+                    </div>
+                </div>
+                <div class="order-status status-{{ order.status.lower() }}">
+                    {{ order.status.title() }}
+                </div>
+            </div>
+            
+            <!-- Order Products -->
+            <div class="order-products">
+                {% if order.items %}
+                    {% for item in order.items[:3] %}
+                    <div class="product-summary">
+                        <div class="product-image">
+                            <i class="fas fa-pills"></i>
+                        </div>
+                        <div class="product-details">
+                            <div class="product-name">{{ item.product.name if item.product else 'Product' }}</div>
+                            <div class="product-meta">
+                                Qty: {{ item.quantity }} × ₹{{ item.price }} = ₹{{ item.subtotal }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% if order.items|length > 3 %}
+                    <div class="text-muted small">
+                        + {{ order.items|length - 3 }} more item(s)
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="order-total">
+                    Total: ₹{{ order.total_amount }}
+                </div>
+                
+                <div class="order-actions">
+                    <a href="{{ url_for('supplier.order_detail', order_id=order.id) }}" 
+                       class="action-btn btn-view">
+                        <i class="fas fa-eye"></i> View Details
+                    </a>
+                    
+                    {% if order.status in ['pending', 'confirmed'] %}
+                    <button class="action-btn btn-update" 
+                            data-order-id="{{ order.id }}" data-order-status="{{ order.status }}"
+                            onclick="showUpdateStatusModal(this.dataset.orderId, this.dataset.orderStatus)">
+                        <i class="fas fa-edit"></i> Update Status
+                    </button>
+                    {% endif %}
+                    
+                    {% if order.status == 'pending' %}
+                    <button class="action-btn btn-cancel" 
+                            data-order-id="{{ order.id }}" onclick="cancelOrder(this.dataset.orderId)">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if orders.pages > 1 %}
+    <div class="pagination-wrapper">
+        <nav aria-label="Orders pagination">
+            <ul class="pagination pagination-lg">
+                {% if orders.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('supplier.orders', page=orders.prev_num, **request.args) }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in orders.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != orders.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('supplier.orders', page=page_num, **request.args) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if orders.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('supplier.orders', page=orders.next_num, **request.args) }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-shopping-cart"></i>
+        </div>
+        <h3 class="mb-3">No Orders Found</h3>
+        <p class="text-muted mb-4">
+            {% if current_status %}
+                No orders with "{{ current_status }}" status found.
+            {% elif request.args.get('search') %}
+                No orders match your search criteria.
+            {% else %}
+                You haven't received any orders yet. Once customers start ordering your products, they'll appear here.
+            {% endif %}
+        </p>
+        {% if current_status or request.args.get('search') %}
+        <a href="{{ url_for('supplier.orders') }}" class="btn btn-primary">
+            <i class="fas fa-list me-2"></i>View All Orders
+        </a>
+        {% else %}
+        <a href="{{ url_for('supplier.products') }}" class="btn btn-primary">
+            <i class="fas fa-box me-2"></i>Manage Products
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Update Status Modal -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Order Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="updateStatusForm" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="newStatus" class="form-label">New Status</label>
+                        <select class="form-select" id="newStatus" name="status" required>
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="shipped">Shipped</option>
+                            <option value="delivered">Delivered</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="statusNote" class="form-label">Note (Optional)</label>
+                        <textarea class="form-control" id="statusNote" name="note" rows="3" 
+                                placeholder="Add a note about this status update..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function showUpdateStatusModal(orderId, currentStatus) {
+        const modal = document.getElementById('updateStatusModal');
+        const form = document.getElementById('updateStatusForm');
+        const statusSelect = document.getElementById('newStatus');
+        
+        // Set form action
+        form.action = `/supplier/orders/${orderId}/update_status`;
+        
+        // Set current status as selected
+        statusSelect.value = currentStatus;
+        
+        // Show modal
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+    }
+    
+    function cancelOrder(orderId) {
+        if (confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
+            fetch(`/supplier/orders/${orderId}/update_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: 'status=cancelled&note=Order cancelled by supplier'
+            })
+            .then(response => {
+                if (response.ok) {
+                    showNotification('Order cancelled successfully', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('Error cancelling order', 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error cancelling order', 'error');
+                console.error('Error:', error);
+            });
+        }
+    }
+    
+    function getCsrfToken() {
+        return document.querySelector('meta[name=csrf-token]').getAttribute('content');
+    }
+    
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 350px;';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+    
+    // Auto-submit search form with debounce
+    let searchTimeout;
+    const searchInput = document.querySelector('.search-input');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (this.value.length >= 3 || this.value.length === 0) {
+                    this.form.submit();
+                }
+            }, 500);
+        });
+    }
+    
+    // Auto-submit on date change
+    document.querySelectorAll('.date-input').forEach(input => {
+        input.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+</script>
+{% endblock %}

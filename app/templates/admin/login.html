@@ -1,0 +1,480 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Login - MediPlant{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-login-section {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .admin-login-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M20,20 Q50,5 80,20 Q95,50 80,80 Q50,95 20,80 Q5,50 20,20" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/></svg>') repeat;
+        opacity: 0.1;
+    }
+    
+    .login-container {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .admin-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        overflow: hidden;
+        max-width: 450px;
+        width: 100%;
+    }
+    
+    .admin-header {
+        background: linear-gradient(135deg, var(--primary-color), rgba(33, 33, 33, 0.9));
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+        position: relative;
+    }
+    
+    .admin-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+    }
+    
+    .admin-icon {
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 2.5rem;
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .admin-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .admin-subtitle {
+        opacity: 0.9;
+        font-size: 1rem;
+    }
+    
+    .admin-body {
+        padding: 40px 30px;
+    }
+    
+    .form-floating {
+        margin-bottom: 20px;
+    }
+    
+    .form-floating label {
+        color: var(--secondary-color);
+        font-weight: 500;
+    }
+    
+    .form-control {
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 12px 15px;
+        background: #f8f9fa;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: var(--secondary-color);
+        background: white;
+        box-shadow: 0 0 0 0.2rem rgba(109, 152, 134, 0.25);
+        transform: translateY(-2px);
+    }
+    
+    .password-toggle {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #666;
+        cursor: pointer;
+        z-index: 10;
+    }
+    
+    .password-field {
+        position: relative;
+    }
+    
+    .remember-me {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 25px;
+    }
+    
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .form-check-input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--secondary-color);
+    }
+    
+    .forgot-password {
+        color: var(--secondary-color);
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+    
+    .forgot-password:hover {
+        color: var(--primary-color);
+        text-decoration: underline;
+    }
+    
+    .btn-admin-login {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .btn-admin-login::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .btn-admin-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        color: white;
+    }
+    
+    .btn-admin-login:hover::before {
+        left: 100%;
+    }
+    
+    .security-notice {
+        background: rgba(231, 76, 60, 0.1);
+        border: 1px solid rgba(231, 76, 60, 0.2);
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        color: #c0392b;
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+    }
+    
+    .back-to-site {
+        text-align: center;
+        margin-top: 20px;
+    }
+    
+    .back-to-site a {
+        color: var(--secondary-color);
+        text-decoration: none;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .back-to-site a:hover {
+        color: var(--primary-color);
+        transform: translateX(-3px);
+    }
+    
+    .login-attempts {
+        background: rgba(241, 196, 15, 0.1);
+        border: 1px solid rgba(241, 196, 15, 0.2);
+        border-radius: 8px;
+        padding: 10px 15px;
+        text-align: center;
+        color: #f39c12;
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+        display: none;
+    }
+    
+    @media (max-width: 768px) {
+        .admin-card {
+            margin: 20px;
+            max-width: none;
+        }
+        
+        .admin-header {
+            padding: 30px 20px;
+        }
+        
+        .admin-body {
+            padding: 30px 20px;
+        }
+        
+        .admin-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 2rem;
+        }
+        
+        .admin-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="admin-login-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="login-container">
+                    <div class="admin-card">
+                        <div class="admin-header">
+                            <div class="admin-icon">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                            <h2 class="admin-title">Admin Access</h2>
+                            <p class="admin-subtitle">MediPlant Administration Portal</p>
+                        </div>
+                        
+                        <div class="admin-body">
+                            <div class="security-notice">
+                                <i class="fas fa-shield-alt"></i>
+                                <strong>Secure Area:</strong> This is a restricted access portal for authorized administrators only.
+                            </div>
+                            
+                            <div class="login-attempts" id="loginAttempts">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Multiple failed attempts detected. Please wait before trying again.
+                            </div>
+                            
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% if messages %}
+                                    {% for category, message in messages %}
+                                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                                            {{ message }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endwith %}
+                            
+                            <form method="POST" action="{{ url_for('admin.login') }}" id="adminLoginForm">
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           placeholder="Admin Email" required autocomplete="username">
+                                    <label for="email">
+                                        <i class="fas fa-envelope"></i> Admin Email
+                                    </label>
+                                </div>
+                                
+                                <div class="form-floating password-field">
+                                    <input type="password" class="form-control" id="password" name="password" 
+                                           placeholder="Password" required autocomplete="current-password">
+                                    <label for="password">
+                                        <i class="fas fa-lock"></i> Password
+                                    </label>
+                                    <button type="button" class="password-toggle" onclick="togglePassword()">
+                                        <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="remember-me">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="remember" name="remember">
+                                        <label class="form-check-label" for="remember">
+                                            Remember me
+                                        </label>
+                                    </div>
+                                    <a href="#" class="forgot-password">Forgot Password?</a>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-admin-login">
+                                    <i class="fas fa-sign-in-alt"></i> Access Admin Panel
+                                </button>
+                            </form>
+                            
+                            <div class="back-to-site">
+                                <a href="{{ url_for('main.index') }}">
+                                    <i class="fas fa-arrow-left"></i> Back to MediPlant
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- System Status Indicator -->
+                    <div class="text-center mt-4">
+                        <small class="text-light">
+                            <i class="fas fa-server"></i> System Status: 
+                            <span class="badge bg-success">Online</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let failedAttempts = 0;
+    const maxAttempts = 3;
+    
+    function togglePassword() {
+        const passwordField = document.getElementById('password');
+        const toggleIcon = document.getElementById('passwordToggleIcon');
+        
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            toggleIcon.className = 'fas fa-eye-slash';
+        } else {
+            passwordField.type = 'password';
+            toggleIcon.className = 'fas fa-eye';
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('adminLoginForm');
+        const emailField = document.getElementById('email');
+        const passwordField = document.getElementById('password');
+        const loginAttemptsDiv = document.getElementById('loginAttempts');
+        
+        // Auto-focus email field
+        emailField.focus();
+        
+        // Form submission handling
+        form.addEventListener('submit', function(e) {
+            const email = emailField.value.trim();
+            const password = passwordField.value.trim();
+            
+            if (!email || !password) {
+                e.preventDefault();
+                showNotification('Please fill in all fields', 'error');
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+            submitBtn.disabled = true;
+            
+            // Re-enable button after a delay (in case of errors)
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 3000);
+        });
+        
+        // Check for failed login attempts in URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('failed') === 'true') {
+            failedAttempts++;
+            
+            if (failedAttempts >= maxAttempts) {
+                loginAttemptsDiv.style.display = 'block';
+                form.style.opacity = '0.5';
+                
+                // Disable form for 30 seconds
+                setTimeout(() => {
+                    loginAttemptsDiv.style.display = 'none';
+                    form.style.opacity = '1';
+                    failedAttempts = 0;
+                }, 30000);
+            }
+        }
+        
+        // Enhanced security: Clear form on page unload
+        window.addEventListener('beforeunload', function() {
+            passwordField.value = '';
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+Alt+L to focus email field
+            if (e.ctrlKey && e.altKey && e.key === 'l') {
+                e.preventDefault();
+                emailField.focus();
+            }
+        });
+        
+        // Auto-logout warning for admin sessions
+        let inactivityTimer;
+        const inactivityTimeout = 15 * 60 * 1000; // 15 minutes
+        
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                showNotification('Session will expire due to inactivity. Please interact with the page.', 'warning');
+            }, inactivityTimeout);
+        }
+        
+        // Reset timer on user activity
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+            document.addEventListener(event, resetInactivityTimer, true);
+        });
+        
+        resetInactivityTimer();
+    });
+    
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 350px;';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block title %}MediPlant - Your Natural Wellness Marketplace{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <div class="hero-content fade-in">
+                    <h1>Discover Nature's <span class="text-light-beige">Healing Power</span></h1>
+                    <p class="lead">Your trusted marketplace for authentic medicinal plants, herbal remedies, and natural wellness products. Sourced directly from certified suppliers worldwide.</p>
+                    <div class="hero-actions mt-4">
+                        <a href="{{ url_for('product.list') }}" class="btn btn-light-beige btn-lg me-3">
+                            <i class="fas fa-leaf me-2"></i>Shop Now
+                        </a>
+                        <a href="#features" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-play-circle me-2"></i>Learn More
+                        </a>
+                    </div>
+                    
+                    <!-- Trust Indicators -->
+                    <div class="trust-indicators mt-4">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="trust-item">
+                                    <i class="fas fa-shield-alt text-light-beige mb-2"></i>
+                                    <small>Certified<br>Products</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="trust-item">
+                                    <i class="fas fa-shipping-fast text-light-beige mb-2"></i>
+                                    <small>Fast<br>Delivery</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="trust-item">
+                                    <i class="fas fa-award text-light-beige mb-2"></i>
+                                    <small>Quality<br>Guaranteed</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="hero-image slide-up">
+                    <img src="{{ url_for('static', filename='images/assets/hero-plants.jpg') }}" 
+                         alt="Medicinal Plants" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Categories Section -->
+<section class="section" id="categories">
+    <div class="container">
+        <div class="section-title">
+            <h2>Explore Our Categories</h2>
+            <p>Discover a wide range of medicinal plants and herbal products carefully curated for your wellness journey</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-seedling"></i>
+                    </div>
+                    <h4>Medicinal Herbs</h4>
+                    <p>Fresh and dried herbs with proven therapeutic properties</p>
+                    <a href="{{ url_for('product.list') }}?category=medicinal-herbs" class="btn btn-outline-sage btn-sm mt-3">
+                        View Products
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-tint"></i>
+                    </div>
+                    <h4>Essential Oils</h4>
+                    <p>Pure, therapeutic-grade essential oils for aromatherapy</p>
+                    <a href="{{ url_for('product.list') }}?category=essential-oils" class="btn btn-outline-sage btn-sm mt-3">
+                        View Products
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-mug-hot"></i>
+                    </div>
+                    <h4>Herbal Teas</h4>
+                    <p>Wellness teas blended for health and relaxation</p>
+                    <a href="{{ url_for('product.list') }}?category=herbal-teas" class="btn btn-outline-sage btn-sm mt-3">
+                        View Products
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-capsules"></i>
+                    </div>
+                    <h4>Supplements</h4>
+                    <p>Natural supplements and herbal formulations</p>
+                    <a href="{{ url_for('product.list') }}?category=supplements" class="btn btn-outline-sage btn-sm mt-3">
+                        View Products
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products Section -->
+<section class="section bg-white">
+    <div class="container">
+        <div class="section-title">
+            <h2>Featured Products</h2>
+            <p>Handpicked premium products from our trusted suppliers</p>
+        </div>
+        
+        <div class="row g-4" id="featured-products">
+            <!-- Products will be loaded via JavaScript -->
+            <div class="col-lg-3 col-md-6">
+                <div class="card product-card">
+                    <div class="product-badge">Featured</div>
+                    <div class="product-actions">
+                        <button class="action-btn" title="Add to Wishlist">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                        <button class="action-btn" title="Quick View">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <img src="{{ url_for('static', filename='images/products/turmeric.jpg') }}" 
+                         class="card-img-top" alt="Organic Turmeric">
+                    <div class="card-body">
+                        <h5 class="card-title">Organic Turmeric Powder</h5>
+                        <p class="card-text">Premium quality turmeric with high curcumin content</p>
+                        <div class="rating">
+                            <i class="fas fa-star star"></i>
+                            <i class="fas fa-star star"></i>
+                            <i class="fas fa-star star"></i>
+                            <i class="fas fa-star star"></i>
+                            <i class="fas fa-star star"></i>
+                            <span class="rating-text">(24 reviews)</span>
+                        </div>
+                        <div class="price-section">
+                            <div>
+                                <span class="price">₹299</span>
+                                <span class="original-price">₹399</span>
+                            </div>
+                            <button class="btn btn-sage-green btn-sm">
+                                <i class="fas fa-shopping-cart me-1"></i>Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="card product-card">
+                    <div class="product-badge">New</div>
+                    <div class="product-actions">
+                        <button class="action-btn" title="Add to Wishlist">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                        <button class="action-btn" title="Quick View">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <img src="{{ url_for('static', filename='images/products/aloe-vera.jpg') }}" 
+                         class="card-img-top" alt="Aloe Vera Gel">
+                    <div class="card-body">
+                        <h5 class="card-title">Fresh Aloe Vera Gel</h5>
+                        <p class="card-text">Pure aloe vera gel for skin care and wellness</p>
+                        <div class="rating">
+                            <i class="fas fa-star star"></i>
+                            <i class="fas fa-star star"></i>
+                            <i class="fas fa-star star"></i>
+                            <i class="fas fa-star star"></i>
+                            <i class="far fa-star star"></i>
+                            <span class="rating-text">(18 reviews)</span>
+                        </div>
+                        <div class="price-section">
+                            <div>
+                                <span class="price">₹149</span>
+                            </div>
+                            <button class="btn btn-sage-green btn-sm">
+                                <i class="fas fa-shopping-cart me-1"></i>Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="card product-card">
+                    <div class="product-badge">Popular</div>
+                    <div class="product-actions">
+                        <button class="action-btn" title="Add to Wishlist">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                        <button class="action-btn" title="Quick View">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <img src="{{ url_for('static', filename='images/products/ashwagandha.jpg') }}" 
+                         class="card-img-top" alt="Ashwagandha Capsules">
+                    <div class="card-body">
+                        <h5 class="card-title">Ashwagandha Capsules</h5>
+                        <p class="card-text">Premium ashwagandha for stress relief and energy</p>
+                        <div class="rating">
+                            <i class="fas fa-star star"></i>
+                            <i class="fas fa-star star"></i>
+                            <i class="fas fa-star star"></i>
+                            <i class="fas fa-star star"></i>
+                            <i class="fas fa-star star"></i>
+                            <span class="rating-text">(42 reviews)</span>
+                        </div>
+                        <div class="price-section">
+                            <div>
+                                <span class="price">₹599</span>
+                                <span class="original-price">₹799</span>
+                            </div>
+                            <button class="btn btn-sage-green btn-sm">
+                                <i class="fas fa-shopping-cart me-1"></i>Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="card product-card">
+                    <div class="product-actions">
+                        <button class="action-btn" title="Add to Wishlist">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                        <button class="action-btn" title="Quick View">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <img src="{{ url_for('static', filename='images/products/neem-oil.jpg') }}" 
+                         class="card-img-top" alt="Neem Oil">
+                    <div class="card-body">
+                        <h5 class="card-title">Pure Neem Oil</h5>
+                        <p class="card-text">Cold-pressed neem oil with antibacterial properties</p>
+                        <div class="rating">
+                            <i class="fas fa-star star"></i>
+                            <i class="fas fa-star star"></i>
+                            <i class="fas fa-star star"></i>
+                            <i class="fas fa-star star"></i>
+                            <i class="far fa-star star"></i>
+                            <span class="rating-text">(15 reviews)</span>
+                        </div>
+                        <div class="price-section">
+                            <div>
+                                <span class="price">₹199</span>
+                            </div>
+                            <button class="btn btn-sage-green btn-sm">
+                                <i class="fas fa-shopping-cart me-1"></i>Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-5">
+            <a href="{{ url_for('product.list') }}" class="btn btn-outline-sage btn-lg">
+                <i class="fas fa-arrow-right me-2"></i>View All Products
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="section" id="features">
+    <div class="container">
+        <div class="section-title">
+            <h2>Why Choose MediPlant?</h2>
+            <p>We're committed to providing the highest quality medicinal plants and herbal products</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card text-center">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-certificate text-sage-green" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h4>Certified Organic</h4>
+                    <p>All our products are certified organic and free from harmful chemicals and pesticides.</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card text-center">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-users text-sage-green" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h4>Trusted Suppliers</h4>
+                    <p>We work only with verified suppliers who maintain the highest quality standards.</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card text-center">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-microscope text-sage-green" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h4>Lab Tested</h4>
+                    <p>Every product undergoes rigorous testing to ensure purity and potency.</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card text-center">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-shipping-fast text-sage-green" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h4>Fast Shipping</h4>
+                    <p>Quick and secure delivery to ensure your products reach you fresh and on time.</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card text-center">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-headset text-sage-green" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h4>Expert Support</h4>
+                    <p>Our herbal experts are available to guide you in choosing the right products.</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card text-center">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-undo text-sage-green" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h4>Easy Returns</h4>
+                    <p>Not satisfied? Return your purchase within 30 days for a full refund.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter Section -->
+<section class="section bg-light-beige">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h2 class="text-dark-charcoal mb-3">Stay Connected with Nature</h2>
+                <p class="text-dark-charcoal mb-4">Get the latest updates on new products, wellness tips, and exclusive offers delivered to your inbox.</p>
+                
+                <form class="newsletter-form">
+                    <div class="row g-2 justify-content-center">
+                        <div class="col-lg-6">
+                            <input type="email" class="form-control" placeholder="Enter your email address" required>
+                        </div>
+                        <div class="col-lg-3">
+                            <button type="submit" class="btn btn-sage-green w-100">
+                                <i class="fas fa-paper-plane me-2"></i>Subscribe
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                <p class="text-muted mt-3 small">
+                    <i class="fas fa-lock me-1"></i>We respect your privacy. Unsubscribe at any time.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add smooth scrolling to anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+});
+
+// Newsletter form submission
+document.querySelector('.newsletter-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const email = this.querySelector('input[type="email"]').value;
+    // Add newsletter subscription logic here
+    alert('Thank you for subscribing!');
+    this.reset();
+});
+
+// Add to cart functionality (placeholder)
+document.querySelectorAll('.btn-sage-green').forEach(button => {
+    if (button.innerHTML.includes('Add')) {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const originalText = this.innerHTML;
+            this.classList.add('btn-loading');
+            
+            setTimeout(() => {
+                this.classList.remove('btn-loading');
+                this.innerHTML = '<i class="fas fa-check me-1"></i>Added';
+                this.classList.remove('btn-sage-green');
+                this.classList.add('btn-success');
+                
+                setTimeout(() => {
+                    this.innerHTML = originalText;
+                    this.classList.remove('btn-success');
+                    this.classList.add('btn-sage-green');
+                }, 2000);
+            }, 1000);
+        });
+    }
+});
+</script>
+{% endblock %}

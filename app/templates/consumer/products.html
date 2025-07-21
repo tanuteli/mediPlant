@@ -1,0 +1,840 @@
+{% extends "base.html" %}
+
+{% block title %}Products - MediPlant{% endblock %}
+
+{% block extra_css %}
+<style>
+    .products-hero {
+        background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+        color: white;
+        padding: 60px 0;
+    }
+    
+    .filters-sidebar {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+        position: sticky;
+        top: 100px;
+    }
+    
+    .filter-section {
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .filter-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    
+    .filter-title {
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+    }
+    
+    .filter-option {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    
+    .filter-option input[type="checkbox"],
+    .filter-option input[type="radio"] {
+        margin-right: 10px;
+        accent-color: var(--secondary-color);
+    }
+    
+    .price-range {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .price-input {
+        width: 80px;
+        padding: 5px 8px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .products-toolbar {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .results-info {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+    
+    .view-toggle {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .view-btn {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        background: white;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .view-btn.active {
+        background: var(--secondary-color);
+        color: white;
+        border-color: var(--secondary-color);
+    }
+    
+    .sort-select {
+        padding: 8px 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: white;
+        min-width: 180px;
+    }
+    
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 25px;
+    }
+    
+    .products-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .product-card {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        position: relative;
+        border: 1px solid rgba(109, 152, 134, 0.1);
+    }
+    
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    }
+    
+    .product-image {
+        position: relative;
+        overflow: hidden;
+        height: 200px;
+    }
+    
+    .product-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .product-card:hover .product-image img {
+        transform: scale(1.05);
+    }
+    
+    .product-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        z-index: 2;
+    }
+    
+    .badge-new {
+        background: var(--secondary-color);
+        color: white;
+    }
+    
+    .badge-sale {
+        background: #e74c3c;
+        color: white;
+    }
+    
+    .badge-organic {
+        background: #27ae60;
+        color: white;
+    }
+    
+    .product-actions {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .product-card:hover .product-actions {
+        opacity: 1;
+    }
+    
+    .action-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: none;
+        background: white;
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .action-btn:hover {
+        background: var(--secondary-color);
+        color: white;
+        transform: scale(1.1);
+    }
+    
+    .product-info {
+        padding: 20px;
+    }
+    
+    .product-category {
+        color: var(--secondary-color);
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+    
+    .product-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 10px;
+        line-height: 1.3;
+    }
+    
+    .product-description {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .product-rating {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 10px;
+    }
+    
+    .stars {
+        color: #ffc107;
+    }
+    
+    .rating-count {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .product-price {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .current-price {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--secondary-color);
+    }
+    
+    .original-price {
+        font-size: 1rem;
+        color: #999;
+        text-decoration: line-through;
+    }
+    
+    .discount {
+        background: #e74c3c;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .product-footer {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn-cart {
+        flex: 1;
+        background: var(--secondary-color);
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-cart:hover {
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .btn-buy {
+        flex: 1;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-buy:hover {
+        background: var(--secondary-color);
+        color: white;
+    }
+    
+    /* List View Styles */
+    .product-card.list-view {
+        display: flex;
+        flex-direction: row;
+        height: auto;
+    }
+    
+    .product-card.list-view .product-image {
+        width: 250px;
+        height: 180px;
+        flex-shrink: 0;
+    }
+    
+    .product-card.list-view .product-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    
+    .pagination-container {
+        margin-top: 40px;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .pagination .page-link {
+        color: var(--primary-color);
+        border-color: rgba(109, 152, 134, 0.3);
+    }
+    
+    .pagination .page-link:hover {
+        background-color: var(--light-color);
+        border-color: var(--secondary-color);
+        color: var(--primary-color);
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+    
+    .search-highlight {
+        background-color: yellow;
+        font-weight: bold;
+    }
+    
+    @media (max-width: 768px) {
+        .products-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .filters-sidebar {
+            position: static;
+        }
+        
+        .products-grid {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .product-card.list-view {
+            flex-direction: column;
+        }
+        
+        .product-card.list-view .product-image {
+            width: 100%;
+            height: 200px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="products-hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1><i class="fas fa-seedling"></i> Medicinal Plants & Herbs</h1>
+                <p class="lead">Discover nature's pharmacy with our curated collection of authentic medicinal plants</p>
+            </div>
+            <div class="col-md-4">
+                <div class="search-box">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="productSearch" placeholder="Search plants..." value="{{ request.args.get('search', '') }}">
+                        <button class="btn btn-outline-light" type="button" onclick="searchProducts()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container my-5">
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-lg-3">
+            <div class="filters-sidebar">
+                <h5><i class="fas fa-filter"></i> Filters</h5>
+                
+                <!-- Categories -->
+                <div class="filter-section">
+                    <div class="filter-title">Categories</div>
+                    {% for category in categories %}
+                    <div class="filter-option">
+                        <input type="checkbox" id="cat-{{ category.id }}" name="category" value="{{ category.id }}" 
+                               {% if category.id|string in request.args.getlist('category') %}checked{% endif %}>
+                        <label for="cat-{{ category.id }}">{{ category.name }} ({{ category.products|length }})</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Price Range -->
+                <div class="filter-section">
+                    <div class="filter-title">Price Range</div>
+                    <div class="price-range">
+                        ₹<input type="number" class="price-input" id="minPrice" placeholder="Min" value="{{ request.args.get('min_price', '') }}">
+                        -
+                        ₹<input type="number" class="price-input" id="maxPrice" placeholder="Max" value="{{ request.args.get('max_price', '') }}">
+                    </div>
+                </div>
+                
+                <!-- Benefits -->
+                <div class="filter-section">
+                    <div class="filter-title">Health Benefits</div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="benefit-1" name="benefit" value="digestive">
+                        <label for="benefit-1">Digestive Health</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="benefit-2" name="benefit" value="immunity">
+                        <label for="benefit-2">Immunity Boost</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="benefit-3" name="benefit" value="respiratory">
+                        <label for="benefit-3">Respiratory Health</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="benefit-4" name="benefit" value="skin">
+                        <label for="benefit-4">Skin Care</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="benefit-5" name="benefit" value="stress">
+                        <label for="benefit-5">Stress Relief</label>
+                    </div>
+                </div>
+                
+                <!-- Availability -->
+                <div class="filter-section">
+                    <div class="filter-title">Availability</div>
+                    <div class="filter-option">
+                        <input type="radio" id="all-stock" name="stock" value="" {% if not request.args.get('stock') %}checked{% endif %}>
+                        <label for="all-stock">All Products</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="radio" id="in-stock" name="stock" value="in_stock" {% if request.args.get('stock') == 'in_stock' %}checked{% endif %}>
+                        <label for="in-stock">In Stock</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="radio" id="out-stock" name="stock" value="out_stock" {% if request.args.get('stock') == 'out_stock' %}checked{% endif %}>
+                        <label for="out-stock">Out of Stock</label>
+                    </div>
+                </div>
+                
+                <!-- Rating -->
+                <div class="filter-section">
+                    <div class="filter-title">Customer Rating</div>
+                    <div class="filter-option">
+                        <input type="radio" id="rating-4" name="rating" value="4" {% if request.args.get('rating') == '4' %}checked{% endif %}>
+                        <label for="rating-4">
+                            <span class="stars">★★★★☆</span> & above
+                        </label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="radio" id="rating-3" name="rating" value="3" {% if request.args.get('rating') == '3' %}checked{% endif %}>
+                        <label for="rating-3">
+                            <span class="stars">★★★☆☆</span> & above
+                        </label>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary w-100 mt-3" onclick="applyFilters()">
+                    <i class="fas fa-search"></i> Apply Filters
+                </button>
+                <button class="btn btn-outline-secondary w-100 mt-2" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Clear All
+                </button>
+            </div>
+        </div>
+        
+        <!-- Products Area -->
+        <div class="col-lg-9">
+            <!-- Toolbar -->
+            <div class="products-toolbar">
+                <div class="results-info">
+                    Showing {{ products.total }} of {{ products.total }} results
+                    {% if request.args.get('search') %}
+                        for "{{ request.args.get('search') }}"
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex align-items-center gap-3">
+                    <div class="view-toggle">
+                        <button class="view-btn active" id="gridView" onclick="toggleView('grid')">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button class="view-btn" id="listView" onclick="toggleView('list')">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                    
+                    <select class="sort-select" onchange="sortProducts(this.value)">
+                        <option value="">Sort by</option>
+                        <option value="name_asc" {% if request.args.get('sort') == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+                        <option value="name_desc" {% if request.args.get('sort') == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
+                        <option value="price_asc" {% if request.args.get('sort') == 'price_asc' %}selected{% endif %}>Price (Low to High)</option>
+                        <option value="price_desc" {% if request.args.get('sort') == 'price_desc' %}selected{% endif %}>Price (High to Low)</option>
+                        <option value="rating" {% if request.args.get('sort') == 'rating' %}selected{% endif %}>Customer Rating</option>
+                        <option value="newest" {% if request.args.get('sort') == 'newest' %}selected{% endif %}>Newest First</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Products Grid -->
+            <div class="products-grid" id="productsContainer">
+                {% for product in products.items %}
+                <div class="product-card" data-product-id="{{ product.id }}">
+                    <div class="product-image">
+                        {% if product.images %}
+                            <img src="{{ url_for('static', filename='images/products/' + product.images[0].filename) }}" 
+                                 alt="{{ product.name }}" loading="lazy">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='images/placeholder-product.jpg') }}" 
+                                 alt="{{ product.name }}" loading="lazy">
+                        {% endif %}
+                        
+                        {% if product.is_new %}
+                            <span class="product-badge badge-new">New</span>
+                        {% elif product.discount_percentage > 0 %}
+                            <span class="product-badge badge-sale">{{ product.discount_percentage }}% OFF</span>
+                        {% elif product.is_organic %}
+                            <span class="product-badge badge-organic">Organic</span>
+                        {% endif %}
+                        
+                        <div class="product-actions">
+                            <button class="action-btn" data-product-id="{{ product.id }}" onclick="addToWishlist(this.dataset.productId)" title="Add to Wishlist">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                            <button class="action-btn" data-product-id="{{ product.id }}" onclick="quickView(this.dataset.productId)" title="Quick View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn" data-product-id="{{ product.id }}" onclick="compareProduct(this.dataset.productId)" title="Compare">
+                                <i class="fas fa-balance-scale"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="product-info">
+                        <div class="product-category">{{ product.category.name }}</div>
+                        <h5 class="product-title">
+                            <a href="{{ url_for('consumer.product_detail', id=product.id) }}" class="text-decoration-none">
+                                {{ product.name }}
+                            </a>
+                        </h5>
+                        <p class="product-description">{{ product.description }}</p>
+                        
+                        <div class="product-rating">
+                            <div class="stars">
+                                {% for i in range(5) %}
+                                    {% if i < product.average_rating %}
+                                        <i class="fas fa-star"></i>
+                                    {% else %}
+                                        <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="rating-count">({{ product.reviews|length }} reviews)</span>
+                        </div>
+                        
+                        <div class="product-price">
+                            <span class="current-price">₹{{ "%.2f"|format(product.discounted_price) }}</span>
+                            {% if product.discount_percentage > 0 %}
+                                <span class="original-price">₹{{ "%.2f"|format(product.price) }}</span>
+                                <span class="discount">{{ product.discount_percentage }}% OFF</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="product-footer">
+                            {% if product.stock_quantity > 0 %}
+                                <button class="btn btn-cart" data-product-id="{{ product.id }}" onclick="addToCart(this.dataset.productId)">
+                                    <i class="fas fa-shopping-cart"></i> Add to Cart
+                                </button>
+                                <button class="btn btn-buy" data-product-id="{{ product.id }}" onclick="buyNow(this.dataset.productId)">
+                                    <i class="fas fa-bolt"></i> Buy Now
+                                </button>
+                            {% else %}
+                                <button class="btn btn-secondary w-100" disabled>
+                                    <i class="fas fa-exclamation-triangle"></i> Out of Stock
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% if not products.items %}
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No products found</h4>
+                <p class="text-muted">Try adjusting your search criteria or filters</p>
+                <button class="btn btn-primary" onclick="clearFilters()">Clear Filters</button>
+            </div>
+            {% endif %}
+            
+            <!-- Pagination -->
+            {% if products.pages > 1 %}
+            <div class="pagination-container">
+                <nav>
+                    <ul class="pagination">
+                        {% if products.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('consumer.products', page=products.prev_num, **request.args) }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in products.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != products.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('consumer.products', page=page_num, **request.args) }}">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if products.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('consumer.products', page=products.next_num, **request.args) }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentView = 'grid';
+    
+    function toggleView(view) {
+        currentView = view;
+        const container = document.getElementById('productsContainer');
+        const gridBtn = document.getElementById('gridView');
+        const listBtn = document.getElementById('listView');
+        
+        if (view === 'grid') {
+            container.className = 'products-grid';
+            gridBtn.classList.add('active');
+            listBtn.classList.remove('active');
+            
+            // Remove list view classes from cards
+            container.querySelectorAll('.product-card').forEach(card => {
+                card.classList.remove('list-view');
+            });
+        } else {
+            container.className = 'products-list';
+            listBtn.classList.add('active');
+            gridBtn.classList.remove('active');
+            
+            // Add list view classes to cards
+            container.querySelectorAll('.product-card').forEach(card => {
+                card.classList.add('list-view');
+            });
+        }
+    }
+    
+    function searchProducts() {
+        const searchTerm = document.getElementById('productSearch').value;
+        const url = new URL(window.location);
+        
+        if (searchTerm) {
+            url.searchParams.set('search', searchTerm);
+        } else {
+            url.searchParams.delete('search');
+        }
+        
+        window.location.href = url.toString();
+    }
+    
+    function sortProducts(sortBy) {
+        const url = new URL(window.location);
+        
+        if (sortBy) {
+            url.searchParams.set('sort', sortBy);
+        } else {
+            url.searchParams.delete('sort');
+        }
+        
+        window.location.href = url.toString();
+    }
+    
+    function applyFilters() {
+        const url = new URL(window.location);
+        
+        // Categories
+        const categories = Array.from(document.querySelectorAll('input[name="category"]:checked'))
+                               .map(cb => cb.value);
+        url.searchParams.delete('category');
+        categories.forEach(cat => url.searchParams.append('category', cat));
+        
+        // Price range
+        const minPrice = document.getElementById('minPrice').value;
+        const maxPrice = document.getElementById('maxPrice').value;
+        
+        if (minPrice) url.searchParams.set('min_price', minPrice);
+        else url.searchParams.delete('min_price');
+        
+        if (maxPrice) url.searchParams.set('max_price', maxPrice);
+        else url.searchParams.delete('max_price');
+        
+        // Stock status
+        const stock = document.querySelector('input[name="stock"]:checked')?.value;
+        if (stock) url.searchParams.set('stock', stock);
+        else url.searchParams.delete('stock');
+        
+        // Rating
+        const rating = document.querySelector('input[name="rating"]:checked')?.value;
+        if (rating) url.searchParams.set('rating', rating);
+        else url.searchParams.delete('rating');
+        
+        window.location.href = url.toString();
+    }
+    
+    function clearFilters() {
+        const url = new URL(window.location);
+        const searchTerm = url.searchParams.get('search');
+        
+        // Clear all parameters except search
+        url.search = '';
+        if (searchTerm) {
+            url.searchParams.set('search', searchTerm);
+        }
+        
+        window.location.href = url.toString();
+    }
+    
+    function addToCart(productId) {
+        addToCartAjax(productId);
+    }
+    
+    function addToWishlist(productId) {
+        addToWishlistAjax(productId);
+    }
+    
+    function buyNow(productId) {
+        // Redirect to checkout with this product
+        window.location.href = `/checkout?product=${productId}&quantity=1`;
+    }
+    
+    function quickView(productId) {
+        // Show product quick view modal
+        showQuickViewModal(productId);
+    }
+    
+    function compareProduct(productId) {
+        // Add to comparison
+        addToComparison(productId);
+    }
+    
+    // Search on Enter key
+    document.getElementById('productSearch').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchProducts();
+        }
+    });
+    
+    // Auto-apply filters on change
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterInputs = document.querySelectorAll('input[type="checkbox"], input[type="radio"]');
+        filterInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                // Auto-apply filters after a delay
+                clearTimeout(window.filterTimeout);
+                window.filterTimeout = setTimeout(applyFilters, 500);
+            });
+        });
+    });
+</script>
+{% endblock %}

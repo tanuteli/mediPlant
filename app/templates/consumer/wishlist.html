@@ -1,0 +1,736 @@
+{% extends "base.html" %}
+
+{% block title %}Wishlist - MediPlant{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wishlist-section {
+        padding: 40px 0;
+        min-height: 60vh;
+    }
+    
+    .wishlist-header {
+        background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+        color: white;
+        padding: 40px 0;
+        margin-bottom: 40px;
+        border-radius: 15px;
+        text-align: center;
+    }
+    
+    .wishlist-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 25px;
+    }
+    
+    .wishlist-item {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        position: relative;
+        border: 1px solid rgba(109, 152, 134, 0.1);
+    }
+    
+    .wishlist-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    }
+    
+    .item-image {
+        position: relative;
+        height: 220px;
+        overflow: hidden;
+    }
+    
+    .item-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .wishlist-item:hover .item-image img {
+        transform: scale(1.05);
+    }
+    
+    .remove-btn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: 35px;
+        height: 35px;
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 50%;
+        color: #e74c3c;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        opacity: 0;
+    }
+    
+    .wishlist-item:hover .remove-btn {
+        opacity: 1;
+    }
+    
+    .remove-btn:hover {
+        background: #e74c3c;
+        color: white;
+        transform: scale(1.1);
+    }
+    
+    .stock-badge {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .badge-in-stock {
+        background: #27ae60;
+        color: white;
+    }
+    
+    .badge-low-stock {
+        background: #f1c40f;
+        color: white;
+    }
+    
+    .badge-out-stock {
+        background: #e74c3c;
+        color: white;
+    }
+    
+    .item-info {
+        padding: 20px;
+    }
+    
+    .item-category {
+        color: var(--secondary-color);
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+    
+    .item-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 10px;
+        line-height: 1.3;
+    }
+    
+    .item-title a {
+        color: inherit;
+        text-decoration: none;
+    }
+    
+    .item-title a:hover {
+        color: var(--secondary-color);
+    }
+    
+    .item-description {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .item-rating {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 15px;
+    }
+    
+    .rating-stars {
+        color: #ffc107;
+    }
+    
+    .rating-count {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .item-price {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .current-price {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--secondary-color);
+    }
+    
+    .original-price {
+        font-size: 1rem;
+        color: #999;
+        text-decoration: line-through;
+    }
+    
+    .discount {
+        background: #e74c3c;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .item-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn-add-cart {
+        flex: 1;
+        background: var(--secondary-color);
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-add-cart:hover {
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .btn-add-cart:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+    
+    .btn-view {
+        flex: 1;
+        background: transparent;
+        color: var(--primary-color);
+        border: 2px solid var(--primary-color);
+        padding: 10px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-view:hover {
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .empty-wishlist {
+        text-align: center;
+        padding: 80px 20px;
+    }
+    
+    .empty-wishlist-icon {
+        font-size: 4rem;
+        color: #ddd;
+        margin-bottom: 20px;
+    }
+    
+    .wishlist-actions {
+        margin-top: 40px;
+        text-align: center;
+    }
+    
+    .bulk-actions {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .select-all {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .bulk-buttons {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .item-checkbox {
+        position: absolute;
+        top: 15px;
+        left: 50px;
+        width: 20px;
+        height: 20px;
+        accent-color: var(--secondary-color);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .wishlist-item:hover .item-checkbox,
+    .item-checkbox:checked {
+        opacity: 1;
+    }
+    
+    .price-alert {
+        background: var(--light-color);
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 15px;
+        border-left: 4px solid var(--secondary-color);
+    }
+    
+    .price-alert h6 {
+        color: var(--primary-color);
+        margin-bottom: 10px;
+    }
+    
+    .alert-input {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .alert-input input {
+        flex: 1;
+        padding: 5px 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .alert-input button {
+        padding: 5px 15px;
+        background: var(--secondary-color);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+    
+    @media (max-width: 768px) {
+        .wishlist-grid {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .bulk-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .bulk-buttons {
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container wishlist-section">
+    {% if wishlist_items %}
+    <!-- Wishlist Header -->
+    <div class="wishlist-header">
+        <h1><i class="fas fa-heart"></i> My Wishlist</h1>
+        <p class="lead">{{ wishlist_items|length }} item{{ 's' if wishlist_items|length != 1 else '' }} saved for later</p>
+    </div>
+    
+    <!-- Bulk Actions -->
+    <div class="bulk-actions">
+        <div class="select-all">
+            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+            <label for="selectAll" class="fw-bold">Select All</label>
+            <span id="selectedCount" class="text-muted">(0 selected)</span>
+        </div>
+        
+        <div class="bulk-buttons">
+            <button class="btn btn-primary" onclick="addSelectedToCart()" id="bulkAddCart" disabled>
+                <i class="fas fa-shopping-cart"></i> Add Selected to Cart
+            </button>
+            <button class="btn btn-outline-danger" onclick="removeSelected()" id="bulkRemove" disabled>
+                <i class="fas fa-trash"></i> Remove Selected
+            </button>
+        </div>
+    </div>
+    
+    <!-- Wishlist Items -->
+    <div class="wishlist-grid">
+        {% for item in wishlist_items %}
+        <div class="wishlist-item" data-item-id="{{ item.id }}">
+            <input type="checkbox" class="item-checkbox" value="{{ item.id }}" onchange="updateBulkActions()">
+            
+            <div class="item-image">
+                <img src="{{ url_for('static', filename='images/products/' + (item.product.images[0].filename if item.product.images else 'placeholder-product.jpg')) }}" 
+                     alt="{{ item.product.name }}" loading="lazy">
+                
+                {% if item.product.stock_quantity > 10 %}
+                    <span class="stock-badge badge-in-stock">In Stock</span>
+                {% elif item.product.stock_quantity > 0 %}
+                    <span class="stock-badge badge-low-stock">Low Stock</span>
+                {% else %}
+                    <span class="stock-badge badge-out-stock">Out of Stock</span>
+                {% endif %}
+                
+                <button class="remove-btn" data-item-id="{{ item.id }}" onclick="removeFromWishlist(this.dataset.itemId)" title="Remove from wishlist">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="item-info">
+                <div class="item-category">{{ item.product.category.name }}</div>
+                <h5 class="item-title">
+                    <a href="{{ url_for('consumer.product_detail', id=item.product.id) }}">
+                        {{ item.product.name }}
+                    </a>
+                </h5>
+                <p class="item-description">{{ item.product.description }}</p>
+                
+                <div class="item-rating">
+                    <div class="rating-stars">
+                        {% for i in range(5) %}
+                            {% if i < item.product.average_rating %}
+                                <i class="fas fa-star"></i>
+                            {% else %}
+                                <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <span class="rating-count">({{ item.product.reviews|length }} reviews)</span>
+                </div>
+                
+                <div class="item-price">
+                    <span class="current-price">₹{{ "%.2f"|format(item.product.discounted_price) }}</span>
+                    {% if item.product.discount_percentage > 0 %}
+                        <span class="original-price">₹{{ "%.2f"|format(item.product.price) }}</span>
+                        <span class="discount">{{ item.product.discount_percentage }}% OFF</span>
+                    {% endif %}
+                </div>
+                
+                <div class="item-actions">
+                    {% if item.product.stock_quantity > 0 %}
+                        <button class="btn btn-add-cart" data-product-id="{{ item.product.id }}" onclick="addToCart(this.dataset.productId)">
+                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                        </button>
+                    {% else %}
+                        <button class="btn btn-add-cart" disabled>
+                            <i class="fas fa-exclamation-triangle"></i> Out of Stock
+                        </button>
+                    {% endif %}
+                    <button class="btn btn-view" data-product-id="{{ item.product.id }}" onclick="viewProduct(this.dataset.productId)">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                </div>
+                
+                <!-- Price Alert -->
+                <div class="price-alert">
+                    <h6><i class="fas fa-bell"></i> Price Alert</h6>
+                    <div class="alert-input">
+                        <input type="number" placeholder="Notify when price drops to ₹" 
+                               id="alertPrice{{ item.id }}" 
+                               value="{{ item.alert_price or '' }}">
+                        <button data-item-id="{{ item.id }}" onclick="setPriceAlert(this.dataset.itemId)">Set</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Wishlist Actions -->
+    <div class="wishlist-actions">
+        <a href="{{ url_for('consumer.products') }}" class="btn btn-outline-primary btn-lg">
+            <i class="fas fa-plus"></i> Add More Items
+        </a>
+        <button class="btn btn-primary btn-lg ms-3" onclick="addAllToCart()">
+            <i class="fas fa-shopping-cart"></i> Add All to Cart
+        </button>
+    </div>
+    
+    {% else %}
+    <!-- Empty Wishlist -->
+    <div class="empty-wishlist">
+        <div class="empty-wishlist-icon">
+            <i class="fas fa-heart"></i>
+        </div>
+        <h3>Your wishlist is empty</h3>
+        <p class="text-muted">Save items you love for easy access later.</p>
+        <a href="{{ url_for('consumer.products') }}" class="btn btn-primary btn-lg mt-3">
+            <i class="fas fa-seedling"></i> Explore Products
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let selectedItems = new Set();
+    
+    function toggleSelectAll() {
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+        
+        itemCheckboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+            if (selectAllCheckbox.checked) {
+                selectedItems.add(checkbox.value);
+            } else {
+                selectedItems.delete(checkbox.value);
+            }
+        });
+        
+        updateBulkActions();
+    }
+    
+    function updateBulkActions() {
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        const checkedCheckboxes = document.querySelectorAll('.item-checkbox:checked');
+        
+        // Update selected items set
+        selectedItems.clear();
+        checkedCheckboxes.forEach(cb => selectedItems.add(cb.value));
+        
+        // Update UI
+        const selectedCount = selectedItems.size;
+        document.getElementById('selectedCount').textContent = `(${selectedCount} selected)`;
+        
+        const bulkAddCart = document.getElementById('bulkAddCart');
+        const bulkRemove = document.getElementById('bulkRemove');
+        
+        if (selectedCount > 0) {
+            bulkAddCart.disabled = false;
+            bulkRemove.disabled = false;
+        } else {
+            bulkAddCart.disabled = true;
+            bulkRemove.disabled = true;
+        }
+        
+        // Update select all checkbox
+        const selectAllCheckbox = document.getElementById('selectAll');
+        if (selectedCount === 0) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = false;
+        } else if (selectedCount === checkboxes.length) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = true;
+        } else {
+            selectAllCheckbox.indeterminate = true;
+        }
+    }
+    
+    function addSelectedToCart() {
+        if (selectedItems.size === 0) {
+            showNotification('Please select items to add to cart', 'warning');
+            return;
+        }
+        
+        const itemIds = Array.from(selectedItems);
+        
+        fetch('/wishlist/add-to-cart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                item_ids: itemIds
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(`${data.added_count} items added to cart`, 'success');
+                selectedItems.clear();
+                updateBulkActions();
+                
+                // Uncheck all checkboxes
+                document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = false);
+            } else {
+                showNotification(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error adding items to cart', 'error');
+        });
+    }
+    
+    function removeSelected() {
+        if (selectedItems.size === 0) {
+            showNotification('Please select items to remove', 'warning');
+            return;
+        }
+        
+        if (!confirm(`Remove ${selectedItems.size} selected items from wishlist?`)) {
+            return;
+        }
+        
+        const itemIds = Array.from(selectedItems);
+        
+        fetch('/wishlist/remove-multiple', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                item_ids: itemIds
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(`${data.removed_count} items removed`, 'success');
+                
+                // Remove items from DOM
+                itemIds.forEach(itemId => {
+                    const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
+                    if (itemElement) {
+                        itemElement.remove();
+                    }
+                });
+                
+                selectedItems.clear();
+                updateBulkActions();
+                
+                // Check if wishlist is empty
+                if (document.querySelectorAll('.wishlist-item').length === 0) {
+                    location.reload();
+                }
+            } else {
+                showNotification(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error removing items', 'error');
+        });
+    }
+    
+    function removeFromWishlist(itemId) {
+        if (!confirm('Remove this item from your wishlist?')) {
+            return;
+        }
+        
+        fetch(`/wishlist/remove/${itemId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Item removed from wishlist', 'success');
+                
+                // Remove from DOM
+                const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
+                if (itemElement) {
+                    itemElement.remove();
+                }
+                
+                // Check if wishlist is empty
+                if (document.querySelectorAll('.wishlist-item').length === 0) {
+                    location.reload();
+                }
+            } else {
+                showNotification(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error removing item', 'error');
+        });
+    }
+    
+    function addToCart(productId) {
+        addToCartAjax(productId, 1);
+    }
+    
+    function viewProduct(productId) {
+        window.location.href = `/products/${productId}`;
+    }
+    
+    function addAllToCart() {
+        if (!confirm('Add all items to cart?')) {
+            return;
+        }
+        
+        fetch('/wishlist/add-all-to-cart', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(`${data.added_count} items added to cart`, 'success');
+            } else {
+                showNotification(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error adding items to cart', 'error');
+        });
+    }
+    
+    function setPriceAlert(itemId) {
+        const alertPriceInput = document.getElementById(`alertPrice${itemId}`);
+        const alertPrice = parseFloat(alertPriceInput.value);
+        
+        if (!alertPrice || alertPrice <= 0) {
+            showNotification('Please enter a valid price', 'warning');
+            return;
+        }
+        
+        fetch(`/wishlist/set-alert/${itemId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                alert_price: alertPrice
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Price alert set successfully!', 'success');
+            } else {
+                showNotification(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error setting price alert', 'error');
+        });
+    }
+    
+    function getCsrfToken() {
+        return document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updateBulkActions();
+    });
+</script>
+{% endblock %}

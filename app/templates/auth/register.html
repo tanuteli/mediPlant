@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}Register - MediPlant{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-section {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        background: linear-gradient(135deg, var(--light-color) 0%, var(--accent-color) 100%);
+    }
+    
+    .auth-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        overflow: hidden;
+        max-width: 500px;
+        width: 100%;
+    }
+    
+    .auth-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+    }
+    
+    .auth-body {
+        padding: 40px 30px;
+    }
+    
+    .form-floating {
+        margin-bottom: 20px;
+    }
+    
+    .form-floating label {
+        color: var(--secondary-color);
+    }
+    
+    .form-control:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 0 0.2rem rgba(109, 152, 134, 0.25);
+    }
+    
+    .role-selection {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .role-option {
+        position: relative;
+    }
+    
+    .role-option input[type="radio"] {
+        display: none;
+    }
+    
+    .role-label {
+        display: block;
+        padding: 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .role-option input[type="radio"]:checked + .role-label {
+        border-color: var(--secondary-color);
+        background: var(--light-color);
+        color: var(--primary-color);
+    }
+    
+    .role-icon {
+        font-size: 1.5rem;
+        display: block;
+        margin-bottom: 5px;
+    }
+    
+    .btn-auth {
+        width: 100%;
+        padding: 12px;
+        border-radius: 10px;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+    
+    .social-login {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    .btn-social {
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        background: white;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-social:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .btn-google {
+        color: #db4437;
+    }
+    
+    .btn-facebook {
+        color: #3b5998;
+    }
+    
+    .divider {
+        text-align: center;
+        margin: 20px 0;
+        position: relative;
+    }
+    
+    .divider::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: #ddd;
+    }
+    
+    .divider span {
+        background: white;
+        padding: 0 15px;
+        color: #666;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <h2><i class="fas fa-user-plus"></i> Join MediPlant</h2>
+                        <p>Create your account to start your herbal journey</p>
+                    </div>
+                    
+                    <div class="auth-body">
+                        <form method="POST" action="{{ url_for('auth.register') }}">
+                            {{ form.hidden_tag() }}
+                            
+                            <!-- Role Selection -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Choose Your Role</label>
+                                <div class="role-selection">
+                                    <div class="role-option">
+                                        {{ form.role(value='consumer', id='role-consumer') }}
+                                        <label for="role-consumer" class="role-label">
+                                            <span class="role-icon">🛒</span>
+                                            <span>Consumer</span>
+                                        </label>
+                                    </div>
+                                    <div class="role-option">
+                                        {{ form.role(value='supplier', id='role-supplier') }}
+                                        <label for="role-supplier" class="role-label">
+                                            <span class="role-icon">🌱</span>
+                                            <span>Supplier</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                {% if form.role.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.role.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Personal Information -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        {{ form.first_name(class="form-control", placeholder="First Name") }}
+                                        {{ form.first_name.label(class="form-label") }}
+                                        {% if form.first_name.errors %}
+                                            <div class="text-danger small">
+                                                {% for error in form.first_name.errors %}{{ error }}{% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        {{ form.last_name(class="form-control", placeholder="Last Name") }}
+                                        {{ form.last_name.label(class="form-label") }}
+                                        {% if form.last_name.errors %}
+                                            <div class="text-danger small">
+                                                {% for error in form.last_name.errors %}{{ error }}{% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-floating">
+                                {{ form.email(class="form-control", placeholder="Email Address") }}
+                                {{ form.email.label(class="form-label") }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.email.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-floating">
+                                {{ form.phone(class="form-control", placeholder="Phone Number") }}
+                                {{ form.phone.label(class="form-label") }}
+                                {% if form.phone.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.phone.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-floating">
+                                {{ form.password(class="form-control", placeholder="Password") }}
+                                {{ form.password.label(class="form-label") }}
+                                {% if form.password.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.password.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-floating">
+                                {{ form.confirm_password(class="form-control", placeholder="Confirm Password") }}
+                                {{ form.confirm_password.label(class="form-label") }}
+                                {% if form.confirm_password.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.confirm_password.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                {{ form.agree_terms(class="form-check-input") }}
+                                <label class="form-check-label" for="{{ form.agree_terms.id }}">
+                                    I agree to the <a href="#" class="text-decoration-none">Terms of Service</a> and <a href="#" class="text-decoration-none">Privacy Policy</a>
+                                </label>
+                                {% if form.agree_terms.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.agree_terms.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            {{ form.submit(class="btn btn-primary btn-auth") }}
+                        </form>
+                        
+                        <div class="divider">
+                            <span>or continue with</span>
+                        </div>
+                        
+                        <div class="social-login">
+                            <button class="btn btn-social btn-google">
+                                <i class="fab fa-google"></i> Google
+                            </button>
+                            <button class="btn btn-social btn-facebook">
+                                <i class="fab fa-facebook-f"></i> Facebook
+                            </button>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <p class="mb-0">Already have an account? 
+                                <a href="{{ url_for('auth.login') }}" class="text-decoration-none fw-bold">Sign In</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Form validation and UX improvements
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const roleOptions = document.querySelectorAll('input[name="role"]');
+        
+        // Role selection handling
+        roleOptions.forEach(option => {
+            option.addEventListener('change', function() {
+                // Add visual feedback or additional fields based on role
+                if (this.value === 'supplier') {
+                    // Could add supplier-specific fields
+                    console.log('Supplier role selected');
+                }
+            });
+        });
+        
+        // Password strength indicator
+        const passwordField = document.querySelector('#password');
+        if (passwordField) {
+            passwordField.addEventListener('input', function() {
+                const strength = calculatePasswordStrength(this.value);
+                // Add password strength indicator
+            });
+        }
+    });
+    
+    function calculatePasswordStrength(password) {
+        let strength = 0;
+        if (password.length >= 8) strength++;
+        if (/[a-z]/.test(password)) strength++;
+        if (/[A-Z]/.test(password)) strength++;
+        if (/[0-9]/.test(password)) strength++;
+        if (/[^A-Za-z0-9]/.test(password)) strength++;
+        return strength;
+    }
+</script>
+{% endblock %}
