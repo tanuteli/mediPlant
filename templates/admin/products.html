@@ -1,0 +1,790 @@
+{% extends "base.html" %}
+
+{% block title %}Product Management - MediPlant Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Admin Sidebar -->
+        <div class="col-lg-2 admin-sidebar">
+            <div class="admin-nav">
+                <h6 class="text-white px-3 mb-3">
+                    <i class="fas fa-user-shield me-2"></i>Admin Panel
+                </h6>
+                
+                <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-link">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+                <a href="{{ url_for('admin_products') }}" class="admin-nav-link active">
+                    <i class="fas fa-seedling me-2"></i>Products
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="admin-nav-link">
+                    <i class="fas fa-users me-2"></i>Users
+                </a>
+                <a href="#" class="admin-nav-link">
+                    <i class="fas fa-box me-2"></i>Orders
+                </a>
+                <a href="#" class="admin-nav-link">
+                    <i class="fas fa-tags me-2"></i>Categories
+                </a>
+                <a href="#" class="admin-nav-link">
+                    <i class="fas fa-chart-bar me-2"></i>Analytics
+                </a>
+                <a href="#" class="admin-nav-link">
+                    <i class="fas fa-cog me-2"></i>Settings
+                </a>
+                
+                <hr class="my-3 border-secondary">
+                
+                <a href="{{ url_for('index') }}" class="admin-nav-link">
+                    <i class="fas fa-home me-2"></i>View Site
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-10 admin-content">
+            <!-- Page Header -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h2 class="fw-bold text-primary mb-2">Product Management</h2>
+                    <p class="text-muted">Manage your medicinal plant inventory</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('admin_add_product') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add New Product
+                    </a>
+                    <button class="btn btn-outline-secondary ms-2" onclick="bulkActions()">
+                        <i class="fas fa-tasks me-2"></i>Bulk Actions
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filters and Search -->
+            <div class="card shadow-soft mb-4">
+                <div class="card-body">
+                    <form method="GET" class="row g-3" id="filterForm">
+                        <div class="col-md-3">
+                            <label for="search" class="form-label">Search Products</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="search" name="search" 
+                                       placeholder="Product name..." value="{{ request.args.get('search', '') }}">
+                                <button class="btn btn-outline-secondary" type="submit" title="Search" aria-label="Search">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">All Categories</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" 
+                                        {% if request.args.get('category') == category.id|string %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Status</option>
+                                <option value="in_stock" {% if request.args.get('status') == 'in_stock' %}selected{% endif %}>In Stock</option>
+                                <option value="low_stock" {% if request.args.get('status') == 'low_stock' %}selected{% endif %}>Low Stock</option>
+                                <option value="out_of_stock" {% if request.args.get('status') == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label for="sort" class="form-label">Sort By</label>
+                            <select class="form-select" id="sort" name="sort">
+                                <option value="name" {% if request.args.get('sort') == 'name' %}selected{% endif %}>Name</option>
+                                <option value="price" {% if request.args.get('sort') == 'price' %}selected{% endif %}>Price</option>
+                                <option value="stock" {% if request.args.get('sort') == 'stock' %}selected{% endif %}>Stock</option>
+                                <option value="created" {% if request.args.get('sort') == 'created' %}selected{% endif %}>Date Added</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">Apply Filters</button>
+                            <a href="{{ url_for('admin_products') }}" class="btn btn-outline-secondary">Clear</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Products Table -->
+            <div class="card shadow-soft">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-seedling me-2"></i>Products ({{ products|length }})
+                    </h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check" name="viewType" id="gridView" autocomplete="off" 
+                               aria-label="Grid view">
+                        <label class="btn btn-outline-primary" for="gridView" onclick="toggleView('grid')" title="Grid view">
+                            <i class="fas fa-th"></i>
+                        </label>
+                        
+                        <input type="radio" class="btn-check" name="viewType" id="listView" autocomplete="off" checked 
+                               aria-label="List view">
+                        <label class="btn btn-outline-primary" for="listView" onclick="toggleView('list')" title="List view">
+                            <i class="fas fa-list"></i>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="card-body p-0">
+                    <!-- List View -->
+                    <div id="listViewContainer" class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <input type="checkbox" class="form-check-input" id="selectAll" 
+                                               onchange="toggleAllSelection()" title="Select all products" 
+                                               aria-label="Select all products">
+                                    </th>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Status</th>
+                                    <th>Rating</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in products %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input product-checkbox" 
+                                               value="{{ product.id }}" onchange="updateBulkActions()" 
+                                               title="Select product" aria-label="Select product">
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ product.image_url }}" class="rounded me-3 product-list-img" 
+                                                 alt="{{ product.name }}" width="50" height="50">
+                                            <div>
+                                                <h6 class="mb-1">{{ product.name }}</h6>
+                                                <small class="text-muted">SKU: {{ product.id }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ product.category_name }}</span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ product.price|inr }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if product.stock_quantity > 10 %}bg-success{% elif product.stock_quantity > 0 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ product.stock_quantity }} units
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if product.stock_quantity > 10 %}
+                                            <span class="badge bg-success">In Stock</span>
+                                        {% elif product.stock_quantity > 0 %}
+                                            <span class="badge bg-warning">Low Stock</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Out of Stock</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="text-warning me-2">
+                                                {% for i in range(5) %}
+                                                    {% if i < (product.rating or 0)|round %}
+                                                        <i class="fas fa-star"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </span>
+                                            <small class="text-muted">({{ product.reviews|length }})</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('product_detail', id=product.id) }}" 
+                                               class="btn btn-outline-primary btn-sm" title="View Product" target="_blank">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('admin_edit_product', id=product.id) }}" 
+                                               class="btn btn-outline-secondary btn-sm" title="Edit Product">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-outline-danger btn-sm delete-product-btn" 
+                                                    data-product-id="{{ product.id }}" 
+                                                    data-product-name="{{ product.name }}" title="Delete Product">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        
+                        {% if not products %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-seedling display-4 text-muted mb-3"></i>
+                            <h5 class="text-muted">No products found</h5>
+                            <p class="text-muted mb-4">Start by adding your first medicinal plant product.</p>
+                            <a href="{{ url_for('admin_add_product') }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Add Product
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Grid View (Hidden by default) -->
+                    <div id="gridViewContainer" class="row g-4 p-4 grid-view-hidden">
+                        {% for product in products %}
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="card product-grid-card h-100">
+                                <div class="position-relative">
+                                    <img src="{{ product.image_url }}" class="card-img-top product-grid-img" alt="{{ product.name }}">
+                                    <div class="position-absolute top-0 start-0 p-2">
+                                        <input type="checkbox" class="form-check-input product-checkbox" 
+                                               value="{{ product.id }}" title="Select product" aria-label="Select product">
+                                    </div>
+                                    <div class="position-absolute top-0 end-0 p-2">
+                                        {% if product.stock_quantity > 10 %}
+                                            <span class="badge bg-success">In Stock</span>
+                                        {% elif product.stock_quantity > 0 %}
+                                            <span class="badge bg-warning">Low Stock</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Out of Stock</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ product.name }}</h6>
+                                    <p class="card-text text-muted small">{{ product.category_name }}</p>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <strong class="text-primary">{{ product.price|inr }}</strong>
+                                        <small class="text-muted">{{ product.stock_quantity }} units</small>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="text-warning">
+                                            {% for i in range(5) %}
+                                                {% if i < (product.rating or 0)|round %}
+                                                    <i class="fas fa-star"></i>
+                                                {% else %}
+                                                    <i class="far fa-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('admin_edit_product', id=product.id) }}" 
+                                               class="btn btn-outline-primary" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-outline-danger delete-product-btn" 
+                                                    data-product-id="{{ product.id }}" 
+                                                    data-product-name="{{ product.name }}" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            {% if products|length > 0 %}
+            <nav aria-label="Products pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item">
+                        <a class="page-link" href="#" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item active">
+                        <a class="page-link" href="#">1</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">2</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">3</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="#" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions Modal -->
+<div class="modal fade" id="bulkActionsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bulk Actions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" title="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Selected <span id="selectedCount">0</span> products</p>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary" onclick="bulkUpdateStock()">
+                        <i class="fas fa-boxes me-2"></i>Update Stock
+                    </button>
+                    <button class="btn btn-warning" onclick="bulkUpdateCategory()">
+                        <i class="fas fa-tags me-2"></i>Change Category
+                    </button>
+                    <button class="btn btn-info" onclick="bulkUpdatePrice()">
+                        <i class="fas fa-dollar-sign me-2"></i>Update Prices
+                    </button>
+                    <button class="btn btn-danger" onclick="bulkDelete()">
+                        <i class="fas fa-trash me-2"></i>Delete Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Edit Modal -->
+<div class="modal fade" id="quickEditModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quick Edit Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" title="Close"></button>
+            </div>
+            <form id="quickEditForm">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="quickEditName" class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="quickEditName" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="quickEditPrice" class="form-label">Price</label>
+                            <input type="number" class="form-control" id="quickEditPrice" step="0.01" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="quickEditStock" class="form-label">Stock Quantity</label>
+                            <input type="number" class="form-control" id="quickEditStock" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="quickEditCategory" class="form-label">Category</label>
+                            <select class="form-select" id="quickEditCategory" required>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="quickEditDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="quickEditDescription" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// View Toggle
+function toggleView(viewType) {
+    const listView = document.getElementById('listViewContainer');
+    const gridView = document.getElementById('gridViewContainer');
+    
+    if (viewType === 'grid') {
+        listView.style.display = 'none';
+        gridView.style.display = 'block';
+    } else {
+        listView.style.display = 'block';
+        gridView.style.display = 'none';
+    }
+    
+    localStorage.setItem('admin_products_view', viewType);
+}
+
+// Load saved view preference
+document.addEventListener('DOMContentLoaded', function() {
+    const savedView = localStorage.getItem('admin_products_view') || 'list';
+    if (savedView === 'grid') {
+        document.getElementById('gridView').checked = true;
+        toggleView('grid');
+    }
+});
+
+// Selection Management
+function toggleAllSelection() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.product-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+    
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const selectedCheckboxes = document.querySelectorAll('.product-checkbox:checked');
+    const count = selectedCheckboxes.length;
+    
+    // Update bulk actions button
+    const bulkBtn = document.querySelector('[onclick="bulkActions()"]');
+    if (bulkBtn) {
+        if (count > 0) {
+            bulkBtn.innerHTML = `<i class="fas fa-tasks me-2"></i>Bulk Actions (${count})`;
+            bulkBtn.classList.remove('btn-outline-secondary');
+            bulkBtn.classList.add('btn-warning');
+        } else {
+            bulkBtn.innerHTML = '<i class="fas fa-tasks me-2"></i>Bulk Actions';
+            bulkBtn.classList.remove('btn-warning');
+            bulkBtn.classList.add('btn-outline-secondary');
+        }
+    }
+    
+    // Update select all checkbox
+    const selectAll = document.getElementById('selectAll');
+    const allCheckboxes = document.querySelectorAll('.product-checkbox');
+    selectAll.indeterminate = count > 0 && count < allCheckboxes.length;
+    selectAll.checked = count === allCheckboxes.length && count > 0;
+}
+
+// Bulk Actions
+function bulkActions() {
+    const selectedCount = document.querySelectorAll('.product-checkbox:checked').length;
+    if (selectedCount === 0) {
+        showToast('Please select products first', 'warning');
+        return;
+    }
+    
+    document.getElementById('selectedCount').textContent = selectedCount;
+    new bootstrap.Modal(document.getElementById('bulkActionsModal')).show();
+}
+
+function bulkUpdateStock() {
+    const selected = getSelectedProducts();
+    if (selected.length === 0) return;
+    
+    const newStock = prompt('Enter new stock quantity for selected products:');
+    if (newStock && !isNaN(newStock)) {
+        // Send bulk update request
+        showToast(`Stock updated for ${selected.length} products`, 'success');
+        bootstrap.Modal.getInstance(document.getElementById('bulkActionsModal')).hide();
+        location.reload();
+    }
+}
+
+function bulkUpdateCategory() {
+    const selected = getSelectedProducts();
+    if (selected.length === 0) return;
+    
+    // Show category selection
+    showToast('Category update feature coming soon', 'info');
+}
+
+function bulkUpdatePrice() {
+    const selected = getSelectedProducts();
+    if (selected.length === 0) return;
+    
+    const percentage = prompt('Enter percentage change (e.g., +10 for 10% increase, -5 for 5% decrease):');
+    if (percentage && !isNaN(percentage)) {
+        showToast(`Prices updated for ${selected.length} products`, 'success');
+        bootstrap.Modal.getInstance(document.getElementById('bulkActionsModal')).hide();
+        location.reload();
+    }
+}
+
+function bulkDelete() {
+    const selected = getSelectedProducts();
+    if (selected.length === 0) return;
+    
+    if (confirm(`Are you sure you want to delete ${selected.length} products? This action cannot be undone.`)) {
+        showToast(`${selected.length} products deleted`, 'success');
+        bootstrap.Modal.getInstance(document.getElementById('bulkActionsModal')).hide();
+        location.reload();
+    }
+}
+
+function getSelectedProducts() {
+    const checkboxes = document.querySelectorAll('.product-checkbox:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
+// Product Actions
+function deleteProduct(productId, productName) {
+    if (confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
+        // Send delete request
+        fetch(`/admin/products/${productId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Product deleted successfully', 'success');
+                location.reload();
+            } else {
+                showToast('Error deleting product', 'error');
+            }
+        })
+        .catch(error => {
+            showToast('Error deleting product', 'error');
+        });
+    }
+}
+
+// Quick Edit
+function quickEdit(productId) {
+    // Fetch product data and populate modal
+    fetch(`/admin/products/${productId}/data`)
+        .then(response => response.json())
+        .then(product => {
+            document.getElementById('quickEditName').value = product.name;
+            document.getElementById('quickEditPrice').value = product.price;
+            document.getElementById('quickEditStock').value = product.stock_quantity;
+            document.getElementById('quickEditCategory').value = product.category_id;
+            document.getElementById('quickEditDescription').value = product.description;
+            
+            new bootstrap.Modal(document.getElementById('quickEditModal')).show();
+        });
+}
+
+document.getElementById('quickEditForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Get form data and send update request
+    const formData = new FormData(this);
+    
+    showToast('Product updated successfully', 'success');
+    bootstrap.Modal.getInstance(document.getElementById('quickEditModal')).hide();
+    location.reload();
+});
+
+// Auto-refresh for real-time updates
+function autoRefresh() {
+    setInterval(function() {
+        // Check for updates
+        fetch('/admin/products/count')
+            .then(response => response.json())
+            .then(data => {
+                const currentCount = document.querySelectorAll('tbody tr').length;
+                if (data.count !== currentCount) {
+                    showToast('Product list updated', 'info');
+                    location.reload();
+                }
+            });
+    }, 30000); // Check every 30 seconds
+}
+
+// Initialize features
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh
+    autoRefresh();
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+            switch(e.key) {
+                case 'f':
+                    e.preventDefault();
+                    document.getElementById('search').focus();
+                    break;
+                case 'n':
+                    e.preventDefault();
+                    window.location.href = "{{ url_for('admin_add_product') }}";
+                    break;
+                case 'a':
+                    e.preventDefault();
+                    document.getElementById('selectAll').click();
+                    break;
+            }
+        }
+        
+        if (e.key === 'Delete') {
+            const selected = getSelectedProducts();
+            if (selected.length > 0) {
+                bulkDelete();
+            }
+        }
+    });
+    
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Real-time search
+    let searchTimeout;
+    document.getElementById('search').addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            document.getElementById('filterForm').submit();
+        }, 500);
+    });
+});
+
+// Export functions
+function exportProducts() {
+    const format = prompt('Export format (csv/excel/json):', 'csv');
+    if (format) {
+        window.location.href = `/admin/products/export?format=${format}`;
+        showToast('Export started', 'info');
+    }
+}
+
+function importProducts() {
+    // Show import modal or redirect to import page
+    showToast('Import feature coming soon', 'info');
+}
+
+// Product analytics
+function showProductAnalytics() {
+    // Redirect to analytics page or show modal
+    showToast('Analytics feature coming soon', 'info');
+}
+
+// Inventory alerts
+function checkLowStock() {
+    const lowStockProducts = document.querySelectorAll('.badge.bg-warning, .badge.bg-danger');
+    if (lowStockProducts.length > 0) {
+        showToast(`${lowStockProducts.length} products need attention`, 'warning');
+    }
+}
+
+// Initialize low stock check
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(checkLowStock, 2000);
+});
+</script>
+
+<style>
+.product-grid-card {
+    transition: transform 0.2s ease;
+}
+
+.product-grid-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.admin-nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.btn-group .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.product-checkbox {
+    transform: scale(1.2);
+}
+
+#bulkActionsModal .btn {
+    text-align: left;
+}
+
+.pagination {
+    --bs-pagination-active-bg: #4A9782;
+    --bs-pagination-active-border-color: #4A9782;
+}
+
+.table-responsive {
+    border-radius: 8px;
+}
+
+.card-img-top {
+    transition: transform 0.2s ease;
+}
+
+.product-grid-card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.form-check-input:checked {
+    background-color: #4A9782;
+    border-color: #4A9782;
+}
+
+.text-warning i {
+    color: #ffc107 !important;
+}
+
+@media (max-width: 768px) {
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        margin-bottom: 2px;
+        border-radius: 4px !important;
+    }
+}
+
+/* Additional styles for improved accessibility and layout */
+.grid-view-hidden {
+    display: none;
+}
+
+.product-grid-img {
+    height: 200px;
+    object-fit: cover;
+}
+
+.product-list-img {
+    object-fit: cover;
+}
+</style>
+
+<script>
+// Enhanced event listeners for better interaction
+document.addEventListener('DOMContentLoaded', function() {
+    // Delete product buttons
+    document.querySelectorAll('.delete-product-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            const productName = this.dataset.productName;
+            deleteProduct(productId, productName);
+        });
+    });
+});
+</script>
+{% endblock %}

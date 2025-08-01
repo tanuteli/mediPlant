@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Order Management - MediPlant Admin{% endblock %}
+
+{% block content %}
+<div class="admin-content">
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0 text-gray-800">Order Management</h1>
+                <p class="text-muted">Manage customer orders and process deliveries</p>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <select class="form-select" id="statusFilter" onchange="filterOrders()" title="Filter orders by status">
+                    <option value="">All Orders</option>
+                    <option value="pending">Pending</option>
+                    <option value="processing">Processing</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+                
+                <button class="btn btn-outline-primary" onclick="exportOrders()">
+                    <i class="fas fa-download me-2"></i>Export
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    Total Orders</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ orders|length }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    Pending Orders</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ orders | selectattr('status', 'equalto', 'pending') | list | length }}
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clock fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                    Processing</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ orders | selectattr('status', 'equalto', 'processing') | list | length }}
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-cog fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    Total Revenue</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    ₹{{ "%.2f"|format(orders | sum(attribute='total_amount') or 0) }}
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-rupee-sign fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Table -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Orders</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="ordersTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Contact</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr data-status="{{ order.status }}">
+                                <td>
+                                    <strong class="text-primary">#{{ order.id }}</strong>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar avatar-sm me-3">
+                                            <div class="avatar-placeholder bg-primary text-white">
+                                                {{ order.full_name[0].upper() }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ order.full_name }}</div>
+                                            <small class="text-muted">{{ order.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <small class="d-block">{{ order.phone or 'N/A' }}</small>
+                                        <small class="text-muted">{{ order.shipping_address[:30] }}{{ '...' if order.shipping_address|length > 30 else '' }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong class="text-success">₹{{ "%.2f"|format(order.total_amount) }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if order.status == 'pending' %}bg-warning{% elif order.status == 'processing' %}bg-info{% elif order.status == 'shipped' %}bg-primary{% elif order.status == 'delivered' %}bg-success{% elif order.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                        {{ order.status.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small>{{ order.created_at }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('admin_order_detail', order_id=order.id) }}" 
+                                           class="btn btn-outline-primary btn-sm" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" 
+                                                    data-bs-toggle="dropdown" title="Update Status">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item status-update" href="#" data-order-id="{{ order.id }}" data-status="pending">
+                                                    <i class="fas fa-clock text-warning me-2"></i>Pending
+                                                </a></li>
+                                                <li><a class="dropdown-item status-update" href="#" data-order-id="{{ order.id }}" data-status="processing">
+                                                    <i class="fas fa-cog text-info me-2"></i>Processing
+                                                </a></li>
+                                                <li><a class="dropdown-item status-update" href="#" data-order-id="{{ order.id }}" data-status="shipped">
+                                                    <i class="fas fa-shipping-fast text-primary me-2"></i>Shipped
+                                                </a></li>
+                                                <li><a class="dropdown-item status-update" href="#" data-order-id="{{ order.id }}" data-status="delivered">
+                                                    <i class="fas fa-check text-success me-2"></i>Delivered
+                                                </a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item status-update" href="#" data-order-id="{{ order.id }}" data-status="cancelled">
+                                                    <i class="fas fa-times text-danger me-2"></i>Cancelled
+                                                </a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Status Form (Hidden) -->
+<form id="updateStatusForm" method="POST" action="{{ url_for('update_order_status') }}" class="d-none">
+    <input type="hidden" id="orderId" name="order_id">
+    <input type="hidden" id="newStatus" name="status">
+</form>
+
+<script>
+// Add event listeners to status update links
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.status-update').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const orderId = this.getAttribute('data-order-id');
+            const status = this.getAttribute('data-status');
+            updateOrderStatus(orderId, status);
+        });
+    });
+});
+
+function updateOrderStatus(orderId, status) {
+    if (confirm(`Are you sure you want to update this order status to "${status.toUpperCase()}"?`)) {
+        document.getElementById('orderId').value = orderId;
+        document.getElementById('newStatus').value = status;
+        document.getElementById('updateStatusForm').submit();
+    }
+}
+
+function filterOrders() {
+    const filter = document.getElementById('statusFilter').value;
+    const rows = document.querySelectorAll('#ordersTable tbody tr');
+    
+    rows.forEach(row => {
+        const status = row.getAttribute('data-status');
+        if (filter === '' || status === filter) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function exportOrders() {
+    window.location.href = '/admin/export_orders';
+}
+
+// Add custom CSS for avatar
+const style = document.createElement('style');
+style.textContent = `
+    .avatar {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 14px;
+        font-weight: bold;
+    }
+    .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+    .border-left-primary {
+        border-left: 4px solid #4e73df !important;
+    }
+    .border-left-success {
+        border-left: 4px solid #1cc88a !important;
+    }
+    .border-left-info {
+        border-left: 4px solid #36b9cc !important;
+    }
+    .border-left-warning {
+        border-left: 4px solid #f6c23e !important;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

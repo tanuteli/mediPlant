@@ -1,0 +1,501 @@
+{% extends "base.html" %}
+
+{% block title %}Shopping Cart - MediPlant{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-6 fw-bold text-primary mb-2">
+                <i class="fas fa-shopping-cart me-3"></i>Shopping Cart
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}" class="text-decoration-none">Home</a></li>
+                    <li class="breadcrumb-item active">Shopping Cart</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    {% if cart_items %}
+    <div class="row">
+        <!-- Cart Items -->
+        <div class="col-lg-8">
+            <div class="card shadow-soft">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Cart Items ({{ cart_items|length }})
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% for item in cart_items %}
+                    <div class="cart-item border-bottom" data-cart-id="{{ item.id }}">
+                        <div class="row align-items-center p-3">
+                            <!-- Product Image -->
+                            <div class="col-md-2 col-3">
+                                <img src="{{ item.image_url or 'https://images.unsplash.com/photo-1518799175676-a0fed7996acb?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80' }}" 
+                                     class="img-fluid rounded" alt="{{ item.name }}">
+                            </div>
+                            
+                            <!-- Product Details -->
+                            <div class="col-md-4 col-9">
+                                <h6 class="mb-1">
+                                    <a href="{{ url_for('product_detail', product_id=item.product_id) }}" 
+                                       class="text-decoration-none text-primary">
+                                        {{ item.name }}
+                                    </a>
+                                </h6>
+                                <small class="text-muted">Medicinal Plant</small>
+                                <div class="mt-2">
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>In Stock
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Quantity Controls -->
+                            <div class="col-md-3 col-6 text-center">
+                                <label class="form-label small fw-semibold">Quantity</label>
+                                <div class="quantity-selector mx-auto">
+                                    <button type="button" class="quantity-btn quantity-decrease">-</button>
+                                    <input type="number" class="quantity-input" value="{{ item.quantity }}" 
+                                           min="1" max="99" data-cart-id="{{ item.id }}">
+                                    <button type="button" class="quantity-btn quantity-increase">+</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Price and Actions -->
+                            <div class="col-md-3 col-6 text-md-end">
+                                <div class="mb-2">
+                                    <small class="text-muted">Price: {{ item.price|inr }}</small><br>
+                                    <strong class="text-primary item-price">{{ item.subtotal|inr }}</strong>
+                                </div>
+                                <button class="btn btn-outline-danger btn-sm" onclick="removeFromCart('{{ item.id }}')" title="Remove from cart">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm ms-1" onclick="moveToWishlist('{{ item.id }}')" title="Move to wishlist">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Continue Shopping -->
+            <div class="text-center mt-4">
+                <a href="{{ url_for('products') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Continue Shopping
+                </a>
+            </div>
+        </div>
+        
+        <!-- Cart Summary -->
+        <div class="col-lg-4">
+            <div class="cart-summary shadow-soft">
+                <h5 class="text-primary mb-4">
+                    <i class="fas fa-calculator me-2"></i>Order Summary
+                </h5>
+                
+                <!-- Subtotal -->
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal ({{ cart_items|length }} items):</span>
+                    <span class="cart-subtotal">{{ total|inr }}</span>
+                </div>
+                
+                <!-- Shipping -->
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Shipping:</span>
+                    <span class="shipping-cost">
+                        {% if total >= 50 %}
+                            <span class="text-success">FREE</span>
+                        {% else %}
+                            ₹449
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <!-- Tax -->
+                <div class="d-flex justify-content-between mb-3">
+                    <span>Estimated Tax:</span>
+                    <span class="tax-amount">{{ (total * 0.18)|inr }}</span>
+                </div>
+                
+                <hr>
+                
+                <!-- Total -->
+                <div class="d-flex justify-content-between mb-4">
+                    <strong>Total:</strong>
+                    <strong class="text-primary cart-total">
+                        {{ (total + (449/75 if total < 50 else 0) + (total * 0.18))|inr }}
+                    </strong>
+                </div>
+                
+                <!-- Discount Code -->
+                <div class="mb-4">
+                    <label for="discountCode" class="form-label small fw-semibold">Discount Code</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="discountCode" placeholder="Enter code">
+                        <button class="btn btn-outline-secondary" type="button" onclick="applyDiscount()">Apply</button>
+                    </div>
+                </div>
+                
+                <!-- Checkout Button -->
+                <div class="d-grid mb-3">
+                    <a href="{{ url_for('checkout') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-credit-card me-2"></i>Proceed to Checkout
+                    </a>
+                </div>
+                
+                <!-- Security Badge -->
+                <div class="text-center">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Secure checkout with SSL encryption
+                    </small>
+                </div>
+                
+                <!-- Free Shipping Banner -->
+                {% if total < 50 %}
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-truck me-2"></i>
+                    <strong>Add {{ (50 - total)|inr }} more for FREE shipping!</strong>
+                </div>
+                {% endif %}
+                
+                <!-- Payment Options -->
+                <div class="mt-4">
+                    <h6 class="fw-semibold mb-3">We Accept</h6>
+                    <div class="d-flex justify-content-between">
+                        <i class="fab fa-cc-visa fa-2x text-primary"></i>
+                        <i class="fab fa-cc-mastercard fa-2x text-primary"></i>
+                        <i class="fab fa-cc-paypal fa-2x text-primary"></i>
+                        <i class="fab fa-cc-apple-pay fa-2x text-primary"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recently Viewed -->
+            <div class="card shadow-soft mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-history me-2"></i>You Might Also Like
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="card card-sm">
+                                <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" 
+                                     class="card-img-top" alt="Suggested Product">
+                                <div class="card-body p-2">
+                                    <small class="fw-semibold">Fresh Ginger Root</small><br>
+                                    <small class="text-primary">₹936</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card card-sm">
+                                <img src="https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" 
+                                     class="card-img-top" alt="Suggested Product">
+                                <div class="card-body p-2">
+                                    <small class="fw-semibold">Lavender Plant</small><br>
+                                    <small class="text-primary">₹1,499</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Empty Cart -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto text-center">
+            <div class="card shadow-soft py-5">
+                <div class="card-body">
+                    <i class="fas fa-shopping-cart display-1 text-muted mb-4"></i>
+                    <h3 class="text-muted mb-3">Your cart is empty</h3>
+                    <p class="text-muted mb-4">
+                        Looks like you haven't added any plants to your cart yet. 
+                        Explore our collection of premium medicinal plants and wellness products.
+                    </p>
+                    <a href="{{ url_for('products') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-seedling me-2"></i>Start Shopping
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Featured Categories -->
+            <div class="row mt-5 g-4">
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 text-center">
+                        <div class="card-body">
+                            <i class="fas fa-pepper-hot fa-3x text-primary mb-3"></i>
+                            <h6 class="fw-semibold">Herbs & Spices</h6>
+                            <p class="text-muted small">Fresh and dried herbs for culinary and medicinal use</p>
+                            <a href="{{ url_for('products', category=1) }}" class="btn btn-outline-primary btn-sm">Browse</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 text-center">
+                        <div class="card-body">
+                            <i class="fas fa-seedling fa-3x text-primary mb-3"></i>
+                            <h6 class="fw-semibold">Medicinal Plants</h6>
+                            <p class="text-muted small">Traditional medicinal plants with healing properties</p>
+                            <a href="{{ url_for('products', category=2) }}" class="btn btn-outline-primary btn-sm">Browse</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 text-center">
+                        <div class="card-body">
+                            <i class="fas fa-mug-hot fa-3x text-primary mb-3"></i>
+                            <h6 class="fw-semibold">Herbal Teas</h6>
+                            <p class="text-muted small">Therapeutic herbal tea blends for wellness</p>
+                            <a href="{{ url_for('products', category=5) }}" class="btn btn-outline-primary btn-sm">Browse</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize cart functionality
+document.addEventListener('DOMContentLoaded', function() {
+    initializeQuantitySelectors();
+    updateCartTotals();
+});
+
+// Remove item from cart
+function removeFromCart(cartId) {
+    if (confirm('Are you sure you want to remove this item from your cart?')) {
+        const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
+        
+        // Animate removal
+        cartItem.style.transition = 'all 0.3s ease';
+        cartItem.style.opacity = '0';
+        cartItem.style.transform = 'translateX(-100%)';
+        
+        setTimeout(function() {
+            cartItem.remove();
+            updateCartTotals();
+            showToast('Item removed from cart!', 'info');
+            
+            // Check if cart is empty
+            const remainingItems = document.querySelectorAll('.cart-item');
+            if (remainingItems.length === 0) {
+                location.reload(); // Reload to show empty cart state
+            }
+        }, 300);
+    }
+}
+
+// Move item to wishlist
+function moveToWishlist(cartId) {
+    if (confirm('Move this item to your wishlist?')) {
+        const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
+        const productName = cartItem.querySelector('h6 a').textContent.trim();
+        
+        // Animate removal
+        cartItem.style.transition = 'all 0.3s ease';
+        cartItem.style.opacity = '0';
+        cartItem.style.transform = 'translateY(-20px)';
+        
+        setTimeout(function() {
+            cartItem.remove();
+            updateCartTotals();
+            showToast(`${productName} moved to wishlist!`, 'success');
+            
+            // Check if cart is empty
+            const remainingItems = document.querySelectorAll('.cart-item');
+            if (remainingItems.length === 0) {
+                location.reload();
+            }
+        }, 300);
+    }
+}
+
+// Update cart totals
+function updateCartTotals() {
+    const cartItems = document.querySelectorAll('.cart-item');
+    let subtotal = 0;
+    let itemCount = 0;
+    
+    cartItems.forEach(function(item) {
+        const priceElement = item.querySelector('.item-price');
+        const quantityElement = item.querySelector('.quantity-input');
+        
+        if (priceElement && quantityElement) {
+            const price = parseFloat(priceElement.textContent.replace('$', ''));
+            const quantity = parseInt(quantityElement.value);
+            
+            // Update item subtotal
+            const itemSubtotal = price;
+            priceElement.textContent = `$${itemSubtotal.toFixed(2)}`;
+            
+            subtotal += itemSubtotal;
+            itemCount += quantity;
+        }
+    });
+    
+    // Update summary
+    const subtotalElement = document.querySelector('.cart-subtotal');
+    const shippingElement = document.querySelector('.shipping-cost');
+    const taxElement = document.querySelector('.tax-amount');
+    const totalElement = document.querySelector('.cart-total');
+    
+    if (subtotalElement) subtotalElement.textContent = `$${subtotal.toFixed(2)}`;
+    
+    // Calculate shipping
+    const shipping = subtotal >= 50 ? 0 : 5.99;
+    if (shippingElement) {
+        shippingElement.innerHTML = shipping === 0 ? '<span class="text-success">FREE</span>' : `$${shipping.toFixed(2)}`;
+    }
+    
+    // Calculate tax
+    const tax = subtotal * 0.08;
+    if (taxElement) taxElement.textContent = `$${tax.toFixed(2)}`;
+    
+    // Calculate total
+    const total = subtotal + shipping + tax;
+    if (totalElement) totalElement.textContent = `$${total.toFixed(2)}`;
+    
+    // Update free shipping banner
+    const freeShippingBanner = document.querySelector('.alert-info');
+    if (freeShippingBanner) {
+        if (subtotal >= 50) {
+            freeShippingBanner.style.display = 'none';
+        } else {
+            const remaining = 50 - subtotal;
+            freeShippingBanner.innerHTML = `
+                <i class="fas fa-truck me-2"></i>
+                <strong>Add $${remaining.toFixed(2)} more for FREE shipping!</strong>
+            `;
+        }
+    }
+}
+
+// Apply discount code
+function applyDiscount() {
+    const discountCode = document.getElementById('discountCode').value.trim().toUpperCase();
+    const validCodes = {
+        'WELCOME10': 0.10,
+        'SAVE15': 0.15,
+        'HERBAL20': 0.20,
+        'NEWUSER': 0.05
+    };
+    
+    if (validCodes[discountCode]) {
+        const discount = validCodes[discountCode];
+        const discountPercent = Math.round(discount * 100);
+        
+        // Add discount row if not exists
+        let discountRow = document.querySelector('.discount-row');
+        if (!discountRow) {
+            discountRow = document.createElement('div');
+            discountRow.className = 'discount-row d-flex justify-content-between mb-2 text-success';
+            
+            const totalRow = document.querySelector('.cart-total').closest('.d-flex');
+            totalRow.parentNode.insertBefore(discountRow, totalRow);
+        }
+        
+        const subtotal = parseFloat(document.querySelector('.cart-subtotal').textContent.replace('₹', '').replace(',', ''));
+        const discountAmount = subtotal * discount;
+        
+        discountRow.innerHTML = `
+            <span>Discount (${discountCode} - ${discountPercent}% off):</span>
+            <span>-₹${discountAmount.toFixed(2)}</span>
+        `;
+        
+        // Update total
+        updateCartTotals();
+        showToast(`Discount code applied! You saved ${discountPercent}%`, 'success');
+        
+        // Disable the input
+        document.getElementById('discountCode').disabled = true;
+        document.querySelector('button[onclick="applyDiscount()"]').textContent = 'Applied';
+        document.querySelector('button[onclick="applyDiscount()"]').disabled = true;
+        
+    } else if (discountCode === '') {
+        showToast('Please enter a discount code', 'warning');
+    } else {
+        showToast('Invalid discount code', 'danger');
+    }
+}
+
+// Save for later functionality
+function saveForLater(cartId) {
+    const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
+    const productName = cartItem.querySelector('h6 a').textContent.trim();
+    
+    // Animate item
+    cartItem.style.transition = 'all 0.3s ease';
+    cartItem.style.opacity = '0.5';
+    
+    setTimeout(function() {
+        cartItem.remove();
+        updateCartTotals();
+        showToast(`${productName} saved for later!`, 'info');
+    }, 1000);
+}
+
+// Quick quantity update
+function updateQuantity(cartId, newQuantity) {
+    if (newQuantity < 1) return;
+    
+    const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
+    const quantityInput = cartItem.querySelector('.quantity-input');
+    const priceElement = cartItem.querySelector('.item-price');
+    
+    // Get base price
+    const basePrice = parseFloat(cartItem.querySelector('small').textContent.replace('Price: $', ''));
+    const newSubtotal = basePrice * newQuantity;
+    
+    // Update display
+    quantityInput.value = newQuantity;
+    priceElement.textContent = `$${newSubtotal.toFixed(2)}`;
+    
+    // Update totals
+    updateCartTotals();
+    
+    // Show feedback
+    showToast('Quantity updated!', 'success');
+}
+
+// Auto-save cart (could be enhanced with AJAX)
+function autoSaveCart() {
+    const cartData = [];
+    document.querySelectorAll('.cart-item').forEach(function(item) {
+        const cartId = item.getAttribute('data-cart-id');
+        const quantity = item.querySelector('.quantity-input').value;
+        cartData.push({ id: cartId, quantity: quantity });
+    });
+    
+    // Store in localStorage as backup
+    localStorage.setItem('cartBackup', JSON.stringify(cartData));
+}
+
+// Auto-save every 30 seconds
+setInterval(autoSaveCart, 30000);
+
+// Quantity change handler
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('quantity-input')) {
+        updateCartTotals();
+        autoSaveCart();
+    }
+});
+</script>
+{% endblock %}

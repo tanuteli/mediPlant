@@ -1,0 +1,536 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - MediPlant{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Admin Sidebar -->
+        <div class="col-lg-2 admin-sidebar">
+            <div class="admin-nav">
+                <h6 class="text-white px-3 mb-3">
+                    <i class="fas fa-user-shield me-2"></i>Admin Panel
+                </h6>
+                
+                <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-link active">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+                <a href="{{ url_for('admin_products') }}" class="admin-nav-link">
+                    <i class="fas fa-seedling me-2"></i>Products
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="admin-nav-link">
+                    <i class="fas fa-users me-2"></i>Users
+                </a>
+                <a href="#" class="admin-nav-link">
+                    <i class="fas fa-box me-2"></i>Orders
+                </a>
+                <a href="#" class="admin-nav-link">
+                    <i class="fas fa-tags me-2"></i>Categories
+                </a>
+                <a href="#" class="admin-nav-link">
+                    <i class="fas fa-chart-bar me-2"></i>Analytics
+                </a>
+                <a href="#" class="admin-nav-link">
+                    <i class="fas fa-cog me-2"></i>Settings
+                </a>
+                
+                <hr class="my-3 border-secondary">
+                
+                <a href="{{ url_for('index') }}" class="admin-nav-link">
+                    <i class="fas fa-home me-2"></i>View Site
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-10 admin-content">
+            <!-- Page Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 class="fw-bold text-primary mb-2">Dashboard Overview</h2>
+                    <p class="text-muted">Welcome back! Here's what's happening with your store today.</p>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row g-4 mb-5">
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-number">{{ total_users }}</div>
+                        <div class="stat-label">Total Users</div>
+                        <div class="stat-change text-success mt-2">
+                            <i class="fas fa-arrow-up me-1"></i>+12% from last month
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-seedling"></i>
+                        </div>
+                        <div class="stat-number">{{ total_products }}</div>
+                        <div class="stat-label">Products</div>
+                        <div class="stat-change text-info mt-2">
+                            <i class="fas fa-plus me-1"></i>5 added this week
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="stat-number">{{ total_orders }}</div>
+                        <div class="stat-label">Total Orders</div>
+                        <div class="stat-change text-success mt-2">
+                            <i class="fas fa-arrow-up me-1"></i>+8% from last week
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-number">{{ total_revenue|inr }}</div>
+                        <div class="stat-label">Revenue</div>
+                        <div class="stat-change text-success mt-2">
+                            <i class="fas fa-arrow-up me-1"></i>+15% from last month
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Recent Orders -->
+                <div class="col-lg-8">
+                    <div class="card shadow-soft">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-clock me-2"></i>Recent Orders
+                            </h5>
+                            <a href="#" class="btn btn-outline-primary btn-sm">View All</a>
+                        </div>
+                        <div class="card-body p-0">
+                            {% if recent_orders %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Customer</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for order in recent_orders %}
+                                        <tr>
+                                            <td>
+                                                <strong class="text-primary">#{{ order.id }}</strong>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <strong>{{ order.full_name }}</strong><br>
+                                                    <small class="text-muted">{{ order.email }}</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <strong>{{ order.total_amount|inr }}</strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-warning">{{ order.status.title() }}</span>
+                                            </td>
+                                            <td>
+                                                <small>{{ order.created_at }}</small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <button class="btn btn-outline-primary btn-sm" title="View Order">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-secondary btn-sm" title="Edit Order">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-shopping-cart display-4 text-muted mb-3"></i>
+                                <h5 class="text-muted">No orders yet</h5>
+                                <p class="text-muted">Orders will appear here when customers start purchasing.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions & Charts -->
+                <div class="col-lg-4">
+                    <!-- Quick Actions -->
+                    <div class="card shadow-soft mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-bolt me-2"></i>Quick Actions
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('admin_add_product') }}" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i>Add New Product
+                                </a>
+                                <button class="btn btn-outline-primary" onclick="exportData()">
+                                    <i class="fas fa-download me-2"></i>Export Data
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="sendNewsletter()">
+                                    <i class="fas fa-envelope me-2"></i>Send Newsletter
+                                </button>
+                                <button class="btn btn-outline-info" onclick="generateReport()">
+                                    <i class="fas fa-chart-line me-2"></i>Generate Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sales Chart -->
+                    <div class="card shadow-soft">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-chart-area me-2"></i>Sales Overview
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="salesChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Sections -->
+            <div class="row mt-5">
+                <!-- Top Products -->
+                <div class="col-lg-6">
+                    <div class="card shadow-soft">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-star me-2"></i>Top Selling Products
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="top-products">
+                                <div class="d-flex align-items-center mb-3">
+                                    <img src="https://images.unsplash.com/photo-1518799175676-a0fed7996acb?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&q=80" 
+                                         class="rounded me-3" alt="Turmeric" width="40" height="40">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">Organic Turmeric Root</h6>
+                                        <small class="text-muted">24 sales this month</small>
+                                    </div>
+                                    <span class="badge bg-primary">₹1,199</span>
+                                </div>
+                                
+                                <div class="d-flex align-items-center mb-3">
+                                    <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&q=80" 
+                                         class="rounded me-3" alt="Ginger" width="40" height="40">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">Fresh Ginger Root</h6>
+                                        <small class="text-muted">18 sales this month</small>
+                                    </div>
+                                    <span class="badge bg-primary">₹936</span>
+                                </div>
+                                
+                                <div class="d-flex align-items-center mb-3">
+                                    <img src="https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&q=80" 
+                                         class="rounded me-3" alt="Lavender" width="40" height="40">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">Lavender Plant</h6>
+                                        <small class="text-muted">15 sales this month</small>
+                                    </div>
+                                    <span class="badge bg-primary">₹1,499</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="col-lg-6">
+                    <div class="card shadow-soft">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-history me-2"></i>Recent Activity
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="activity-feed">
+                                <div class="activity-item">
+                                    <div class="activity-icon bg-success">
+                                        <i class="fas fa-user-plus"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <p class="mb-1"><strong>New user registered</strong></p>
+                                        <small class="text-muted">John Doe joined 2 hours ago</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="activity-item">
+                                    <div class="activity-icon bg-primary">
+                                        <i class="fas fa-shopping-cart"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <p class="mb-1"><strong>New order placed</strong></p>
+                                        <small class="text-muted">Order #123 - ₹3,449</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="activity-item">
+                                    <div class="activity-icon bg-info">
+                                        <i class="fas fa-seedling"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <p class="mb-1"><strong>Product updated</strong></p>
+                                        <small class="text-muted">Aloe Vera Plant stock updated</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="activity-item">
+                                    <div class="activity-icon bg-warning">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <p class="mb-1"><strong>Low stock alert</strong></p>
+                                        <small class="text-muted">Holy Basil - Only 3 left</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Sales Chart
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Sales',
+                data: [1200, 1900, 3000, 2500, 2200, 3000],
+                borderColor: '#4A9782',
+                backgroundColor: 'rgba(74, 151, 130, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+});
+
+// Quick Action Functions
+function exportData() {
+    showToast('Data export started! You will receive an email when ready.', 'info');
+}
+
+function sendNewsletter() {
+    if (confirm('Send newsletter to all subscribers?')) {
+        showToast('Newsletter sent successfully!', 'success');
+    }
+}
+
+function generateReport() {
+    showToast('Report generation started! It will be available in downloads.', 'info');
+}
+
+// Real-time updates simulation
+function simulateRealTimeUpdates() {
+    setInterval(function() {
+        // Update statistics randomly
+        const userCount = document.querySelector('.stat-card .stat-number');
+        if (userCount && Math.random() > 0.95) {
+            const current = parseInt(userCount.textContent);
+            userCount.textContent = current + 1;
+            
+            // Show notification
+            showToast('New user registered!', 'success');
+        }
+    }, 10000);
+}
+
+// Initialize real-time updates
+simulateRealTimeUpdates();
+
+// Activity feed auto-refresh
+function addNewActivity(type, message, time) {
+    const activityFeed = document.querySelector('.activity-feed');
+    if (activityFeed) {
+        const newActivity = document.createElement('div');
+        newActivity.className = 'activity-item';
+        newActivity.innerHTML = `
+            <div class="activity-icon bg-${type}">
+                <i class="fas fa-${getIconForActivity(type)}"></i>
+            </div>
+            <div class="activity-content">
+                <p class="mb-1"><strong>${message}</strong></p>
+                <small class="text-muted">${time}</small>
+            </div>
+        `;
+        
+        activityFeed.prepend(newActivity);
+        
+        // Remove oldest if more than 5
+        const activities = activityFeed.querySelectorAll('.activity-item');
+        if (activities.length > 5) {
+            activities[activities.length - 1].remove();
+        }
+    }
+}
+
+function getIconForActivity(type) {
+    const icons = {
+        'success': 'user-plus',
+        'primary': 'shopping-cart',
+        'info': 'seedling',
+        'warning': 'exclamation-triangle'
+    };
+    return icons[type] || 'bell';
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey || e.metaKey) {
+        switch(e.key) {
+            case 'n':
+                e.preventDefault();
+                window.location.href = "{{ url_for('admin_add_product') }}";
+                break;
+            case 'u':
+                e.preventDefault();
+                window.location.href = "{{ url_for('admin_users') }}";
+                break;
+            case 'p':
+                e.preventDefault();
+                window.location.href = "{{ url_for('admin_products') }}";
+                break;
+        }
+    }
+});
+
+// Show keyboard shortcuts info
+function showKeyboardShortcuts() {
+    const shortcuts = [
+        'Ctrl+N: Add New Product',
+        'Ctrl+U: Manage Users',
+        'Ctrl+P: Manage Products'
+    ];
+    
+    showToast(shortcuts.join('<br>'), 'info');
+}
+
+// Add keyboard shortcuts info to page
+document.addEventListener('DOMContentLoaded', function() {
+    const helpButton = document.createElement('button');
+    helpButton.className = 'btn btn-outline-secondary btn-sm position-fixed';
+    helpButton.style.cssText = 'bottom: 20px; left: 20px; z-index: 1000;';
+    helpButton.innerHTML = '<i class="fas fa-keyboard"></i>';
+    helpButton.title = 'Keyboard Shortcuts';
+    helpButton.onclick = showKeyboardShortcuts;
+    
+    document.body.appendChild(helpButton);
+});
+</script>
+
+<style>
+.activity-feed {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.activity-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    flex-shrink: 0;
+    color: white;
+    font-size: 12px;
+}
+
+.activity-content {
+    flex-grow: 1;
+}
+
+.activity-content p {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.top-products img {
+    object-fit: cover;
+}
+
+.stat-change {
+    font-size: 12px;
+    font-weight: 600;
+}
+</style>
+{% endblock %}

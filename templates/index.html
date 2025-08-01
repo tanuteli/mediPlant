@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+
+{% block title %}MediPlant - Natural Healing, Pure Wellness{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 hero-content">
+                <h1 class="hero-title fade-in-up">Natural Healing,<br>Pure Wellness</h1>
+                <p class="hero-subtitle fade-in-up delay-1">
+                    Discover the power of nature with our premium collection of medicinal plants, 
+                    herbs, and wellness products. Trusted by thousands for authentic healing solutions.
+                </p>
+                <div class="hero-buttons fade-in-up delay-2">
+                    <a href="{{ url_for('products') }}" class="btn btn-light btn-hero me-3">
+                        <i class="fas fa-leaf me-2"></i>Shop Now
+                    </a>
+                    <a href="#features" class="btn btn-outline-light btn-hero">
+                        <i class="fas fa-info-circle me-2"></i>Learn More
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center fade-in-up delay-3">
+                <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                     alt="Medicinal Plants" class="img-fluid rounded-3 shadow-strong" style="max-height: 500px; object-fit: cover;">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="features-section">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="display-5 fw-bold text-primary mb-3">Why Choose MediPlant?</h2>
+                <p class="lead text-muted">
+                    We're committed to providing you with the highest quality medicinal plants 
+                    and herbal products, backed by traditional wisdom and modern quality standards.
+                </p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="text-center fade-in-up">
+                    <div class="feature-icon">
+                        <i class="fas fa-leaf"></i>
+                    </div>
+                    <h5 class="feature-title">100% Natural</h5>
+                    <p class="text-muted">
+                        All our products are sourced from organic farms and are completely natural 
+                        with no harmful chemicals or additives.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="text-center fade-in-up delay-1">
+                    <div class="feature-icon">
+                        <i class="fas fa-certificate"></i>
+                    </div>
+                    <h5 class="feature-title">Quality Assured</h5>
+                    <p class="text-muted">
+                        Every product undergoes rigorous quality testing to ensure purity, 
+                        potency, and safety for your wellness journey.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="text-center fade-in-up delay-2">
+                    <div class="feature-icon">
+                        <i class="fas fa-shipping-fast"></i>
+                    </div>
+                    <h5 class="feature-title">Fast Delivery</h5>
+                    <p class="text-muted">
+                        Quick and secure delivery to your doorstep with special packaging 
+                        to maintain freshness and quality.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="text-center fade-in-up delay-3">
+                    <div class="feature-icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <h5 class="feature-title">Expert Guidance</h5>
+                    <p class="text-muted">
+                        Get advice from our team of herbalists and wellness experts 
+                        to choose the right products for your needs.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products Section -->
+{% if featured_products %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="display-5 fw-bold text-primary mb-3">Featured Products</h2>
+                <p class="lead text-muted">
+                    Explore our handpicked selection of premium medicinal plants and wellness products.
+                </p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            {% for product in featured_products %}
+            <div class="col-lg-4 col-md-6">
+                <div class="card product-card h-100 fade-in-up" style="animation-delay: {{ loop.index * 0.1 }}s">
+                    <div class="position-relative">
+                        <img src="{{ product.image_url or 'https://images.unsplash.com/photo-1518799175676-a0fed7996acb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80' }}" 
+                             class="card-img-top" alt="{{ product.name }}">
+                        {% if loop.index <= 3 %}
+                        <span class="product-badge badge-featured">
+                            <i class="fas fa-star me-1"></i>Featured
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <div class="mb-2">
+                            <small class="text-muted">{{ product.category_name or 'Medicinal Plants' }}</small>
+                        </div>
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text text-muted flex-grow-1">
+                            {{ product.description[:100] }}{% if product.description|length > 100 %}...{% endif %}
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                            <div>
+                                <span class="price">{{ product.price|inr }}</span>
+                            </div>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('product_detail', product_id=product.id) }}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if session.user_id %}
+                                <button onclick="addToCart({{ product.id }})" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-cart-plus"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center mt-5">
+            <a href="{{ url_for('products') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-seedling me-2"></i>View All Products
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Categories Section -->
+{% if categories %}
+<section class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="display-5 fw-bold text-primary mb-3">Shop by Category</h2>
+                <p class="lead text-muted">
+                    Browse our carefully curated categories to find exactly what you need for your wellness journey.
+                </p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            {% for category in categories %}
+            <div class="col-lg-3 col-md-6">
+                <a href="{{ url_for('products', category=category.id) }}" class="text-decoration-none">
+                    <div class="category-card fade-in-up" style="animation-delay: {{ loop.index * 0.1 }}s">
+                        <div class="category-icon">
+                            {% if category.name == 'Herbs & Spices' %}
+                                <i class="fas fa-pepper-hot"></i>
+                            {% elif category.name == 'Medicinal Plants' %}
+                                <i class="fas fa-seedling"></i>
+                            {% elif category.name == 'Aromatic Plants' %}
+                                <i class="fas fa-spa"></i>
+                            {% elif category.name == 'Ayurvedic Herbs' %}
+                                <i class="fas fa-om"></i>
+                            {% elif category.name == 'Herbal Teas' %}
+                                <i class="fas fa-mug-hot"></i>
+                            {% elif category.name == 'Essential Oils' %}
+                                <i class="fas fa-tint"></i>
+                            {% else %}
+                                <i class="fas fa-leaf"></i>
+                            {% endif %}
+                        </div>
+                        <h5 class="category-title">{{ category.name }}</h5>
+                        <p class="text-muted mb-0">{{ category.description }}</p>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Call to Action Section -->
+<section class="py-5 bg-gradient-primary text-white">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h3 class="fw-bold mb-3">Start Your Natural Wellness Journey Today</h3>
+                <p class="lead mb-0">
+                    Join thousands of satisfied customers who have discovered the power of natural healing. 
+                    Get expert guidance, premium quality products, and fast delivery.
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                {% if not session.user_id %}
+                <a href="{{ url_for('register') }}" class="btn btn-light btn-lg">
+                    <i class="fas fa-user-plus me-2"></i>Get Started
+                </a>
+                {% else %}
+                <a href="{{ url_for('products') }}" class="btn btn-light btn-lg">
+                    <i class="fas fa-shopping-bag me-2"></i>Shop Now
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h3 class="fw-bold text-primary mb-3">Stay Updated with Natural Wellness Tips</h3>
+                <p class="lead text-muted mb-4">
+                    Subscribe to our newsletter for the latest updates on medicinal plants, 
+                    wellness tips, and exclusive offers.
+                </p>
+                <form class="row g-3 justify-content-center">
+                    <div class="col-md-6">
+                        <input type="email" class="form-control form-control-lg" 
+                               id="newsletter-email" placeholder="Enter your email address">
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" onclick="subscribeNewsletter()" 
+                                class="btn btn-primary btn-lg">
+                            <i class="fas fa-paper-plane me-2"></i>Subscribe
+                        </button>
+                    </div>
+                </form>
+                <small class="text-muted mt-2 d-block">
+                    We respect your privacy. No spam, just valuable wellness content.
+                </small>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-lg-3 col-6">
+                <div class="fade-in-up">
+                    <h2 class="display-4 fw-bold text-primary mb-0">500+</h2>
+                    <p class="text-muted">Premium Products</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="fade-in-up delay-1">
+                    <h2 class="display-4 fw-bold text-primary mb-0">10K+</h2>
+                    <p class="text-muted">Happy Customers</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="fade-in-up delay-2">
+                    <h2 class="display-4 fw-bold text-primary mb-0">15+</h2>
+                    <p class="text-muted">Years Experience</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="fade-in-up delay-3">
+                    <h2 class="display-4 fw-bold text-primary mb-0">99%</h2>
+                    <p class="text-muted">Customer Satisfaction</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add any page-specific JavaScript here
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize hero animations
+    const heroElements = document.querySelectorAll('.hero-content .fade-in-up');
+    heroElements.forEach(function(element, index) {
+        element.style.animationDelay = (index * 0.2) + 's';
+        element.classList.add('animate');
+    });
+});
+</script>
+{% endblock %}

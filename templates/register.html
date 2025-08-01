@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Register - MediPlant{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <h2 class="auth-title">Join MediPlant</h2>
+                        <p class="auth-subtitle">Create your account and start your wellness journey</p>
+                    </div>
+                    
+                    <form method="POST" class="needs-validation" novalidate>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="full_name" class="form-label">
+                                    <i class="fas fa-user me-2"></i>Full Name
+                                </label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" 
+                                       placeholder="Enter your full name" required>
+                                <div class="invalid-feedback">
+                                    Please provide your full name.
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="username" class="form-label">
+                                    <i class="fas fa-at me-2"></i>Username
+                                </label>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       placeholder="Choose a username" required>
+                                <div class="invalid-feedback">
+                                    Please choose a username.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope me-2"></i>Email Address
+                            </label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   placeholder="Enter your email address" required>
+                            <div class="invalid-feedback">
+                                Please provide a valid email address.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">
+                                <i class="fas fa-phone me-2"></i>Phone Number (Optional)
+                            </label>
+                            <input type="tel" class="form-control" id="phone" name="phone" 
+                                   placeholder="Enter your phone number">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-2"></i>Password
+                            </label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       placeholder="Create a strong password" required minlength="6">
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword" title="Toggle password visibility">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="invalid-feedback">
+                                Password must be at least 6 characters long.
+                            </div>
+                            <small class="text-muted">
+                                Password should contain at least 6 characters with a mix of letters and numbers.
+                            </small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">
+                                <i class="fas fa-lock me-2"></i>Confirm Password
+                            </label>
+                            <input type="password" class="form-control" id="confirm_password" 
+                                   placeholder="Confirm your password" required>
+                            <div class="invalid-feedback">
+                                Passwords do not match.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="terms" required>
+                            <label class="form-check-label" for="terms">
+                                I agree to the <a href="#" class="text-primary">Terms of Service</a> 
+                                and <a href="#" class="text-primary">Privacy Policy</a>
+                            </label>
+                            <div class="invalid-feedback">
+                                You must agree to the terms and conditions.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="newsletter">
+                            <label class="form-check-label" for="newsletter">
+                                Subscribe to our newsletter for wellness tips and special offers
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>Create Account
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="text-center mt-4">
+                        <p class="text-muted">
+                            Already have an account? 
+                            <a href="{{ url_for('login') }}" class="text-primary text-decoration-none fw-semibold">
+                                Sign in here
+                            </a>
+                        </p>
+                    </div>
+                    
+                    <!-- Benefits of Registration -->
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6 class="text-primary mb-2">
+                            <i class="fas fa-star me-2"></i>Benefits of Joining
+                        </h6>
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-1">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>Personalized product recommendations</small>
+                            </li>
+                            <li class="mb-1">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>Order tracking and history</small>
+                            </li>
+                            <li class="mb-1">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>Exclusive member discounts</small>
+                            </li>
+                            <li>
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>Expert wellness guidance</small>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('togglePassword').addEventListener('click', function() {
+    const password = document.getElementById('password');
+    const icon = this.querySelector('i');
+    
+    if (password.type === 'password') {
+        password.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        password.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+});
+
+// Password confirmation validation
+document.getElementById('confirm_password').addEventListener('input', function() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = this.value;
+    
+    if (password !== confirmPassword) {
+        this.setCustomValidity('Passwords do not match');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+
+// Real-time password strength indicator
+document.getElementById('password').addEventListener('input', function() {
+    const password = this.value;
+    const strength = checkPasswordStrength(password);
+    updatePasswordStrengthIndicator(strength);
+});
+
+function checkPasswordStrength(password) {
+    let strength = 0;
+    if (password.length >= 6) strength++;
+    if (password.match(/[a-z]/)) strength++;
+    if (password.match(/[A-Z]/)) strength++;
+    if (password.match(/[0-9]/)) strength++;
+    if (password.match(/[^a-zA-Z0-9]/)) strength++;
+    return strength;
+}
+
+function updatePasswordStrengthIndicator(strength) {
+    // Remove existing indicator
+    const existingIndicator = document.querySelector('.password-strength');
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+    
+    if (strength > 0) {
+        const passwordField = document.getElementById('password');
+        const indicator = document.createElement('div');
+        indicator.className = 'password-strength mt-1';
+        
+        const strengthLevels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+        const strengthColors = ['danger', 'warning', 'info', 'primary', 'success'];
+        
+        indicator.innerHTML = `
+            <small class="text-${strengthColors[strength - 1]}">
+                Password Strength: ${strengthLevels[strength - 1]}
+            </small>
+        `;
+        
+        passwordField.parentNode.insertBefore(indicator, passwordField.nextSibling);
+    }
+}
+
+// Username availability check (simulated)
+document.getElementById('username').addEventListener('blur', function() {
+    const username = this.value.trim();
+    if (username.length >= 3) {
+        // Simulate API call
+        setTimeout(() => {
+            const isAvailable = Math.random() > 0.3; // 70% chance available
+            showUsernameAvailability(this, isAvailable);
+        }, 500);
+    }
+});
+
+function showUsernameAvailability(input, isAvailable) {
+    // Remove existing feedback
+    const existingFeedback = input.parentNode.querySelector('.username-feedback');
+    if (existingFeedback) {
+        existingFeedback.remove();
+    }
+    
+    const feedback = document.createElement('small');
+    feedback.className = `username-feedback mt-1 d-block ${isAvailable ? 'text-success' : 'text-danger'}`;
+    feedback.innerHTML = `
+        <i class="fas fa-${isAvailable ? 'check' : 'times'} me-1"></i>
+        Username is ${isAvailable ? 'available' : 'already taken'}
+    `;
+    
+    input.parentNode.appendChild(feedback);
+}
+</script>
+{% endblock %}

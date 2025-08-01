@@ -1,0 +1,527 @@
+{% extends "base.html" %}
+
+{% block title %}Order Confirmation - MediPlant{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Success Header -->
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto text-center">
+            <div class="card shadow-soft border-0">
+                <div class="card-body py-5">
+                    <div class="success-icon mb-4">
+                        <i class="fas fa-check-circle display-1 text-success"></i>
+                    </div>
+                    <h1 class="display-5 fw-bold text-primary mb-3">Order Confirmed!</h1>
+                    <p class="lead text-muted mb-4">
+                        Thank you for your order! We've received your payment and your natural wellness products 
+                        are being prepared for shipment.
+                    </p>
+                    <div class="alert alert-success d-inline-flex align-items-center">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Order #{{ order.id }} - {{ order.created_at }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Order Details -->
+        <div class="col-lg-8">
+            <!-- Order Summary -->
+            <div class="card shadow-soft mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-receipt me-2"></i>Order Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Order Items -->
+                    <div class="order-items">
+                        {% for item in order_items %}
+                        <div class="d-flex align-items-center py-3 {% if not loop.last %}border-bottom{% endif %}">
+                            <div class="me-3">
+                                <img src="{{ item.image_url or 'https://images.unsplash.com/photo-1518799175676-a0fed7996acb?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&q=80' }}" 
+                                     class="rounded border" alt="{{ item.name }}" width="60" height="60" style="object-fit: cover;">
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ item.name }}</h6>
+                                <small class="text-muted">Quantity: {{ item.quantity }}</small>
+                                <div class="mt-1">
+                                    <small class="text-success">
+                                        <i class="fas fa-check-circle me-1"></i>In Stock - Ready to Ship
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="text-muted small">Unit Price: {{ item.price|inr }}</div>
+                                <strong class="text-primary">{{ (item.price * item.quantity)|inr }}</strong>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Order Total -->
+                    <div class="mt-4 pt-3 border-top">
+                        <div class="row">
+                            <div class="col-sm-6 offset-sm-6">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Subtotal:</span>
+                                    <span>{{ (order.total_amount - 449/75 - (order.total_amount * 0.18))|inr }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Shipping:</span>
+                                    <span>
+                                        {% if order.total_amount >= 50 %}
+                                            <span class="text-success">FREE</span>
+                                        {% else %}
+                                            ₹449
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>GST (18%):</span>
+                                    <span>{{ (order.total_amount * 0.18)|inr }}</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between">
+                                    <strong>Total:</strong>
+                                    <strong class="text-primary fs-5">{{ order.total_amount|inr }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping Information -->
+            <div class="card shadow-soft mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-truck me-2"></i>Shipping Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-semibold text-primary">Shipping Address</h6>
+                            <address class="mb-0">
+                                <strong>{{ order.full_name }}</strong><br>
+                                {{ order.shipping_address|replace('\n', '<br>')|safe }}
+                            </address>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-semibold text-primary">Delivery Details</h6>
+                            <ul class="list-unstyled mb-0">
+                                <li><i class="fas fa-calendar me-2 text-muted"></i>Estimated Delivery: 5-7 business days</li>
+                                <li><i class="fas fa-box me-2 text-muted"></i>Packaging: Eco-friendly materials</li>
+                                <li><i class="fas fa-thermometer-half me-2 text-muted"></i>Temperature controlled for plants</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Timeline -->
+            <div class="card shadow-soft mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-timeline me-2"></i>Order Status
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item completed">
+                            <div class="timeline-marker">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6 class="fw-semibold">Order Placed</h6>
+                                <p class="text-muted mb-1">Your order has been received and confirmed.</p>
+                                <small class="text-muted">{{ order.created_at }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item active">
+                            <div class="timeline-marker">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6 class="fw-semibold">Processing</h6>
+                                <p class="text-muted mb-1">We're preparing your order for shipment.</p>
+                                <small class="text-muted">In progress</small>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker">
+                                <i class="fas fa-truck"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6 class="fw-semibold">Shipped</h6>
+                                <p class="text-muted mb-1">Your order is on the way!</p>
+                                <small class="text-muted">Pending</small>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6 class="fw-semibold">Delivered</h6>
+                                <p class="text-muted mb-1">Order delivered to your address.</p>
+                                <small class="text-muted">Pending</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Actions & Info -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card shadow-soft mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-tools me-2"></i>Order Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" onclick="printOrder()">
+                            <i class="fas fa-print me-2"></i>Print Order
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="downloadInvoice()">
+                            <i class="fas fa-download me-2"></i>Download Invoice
+                        </button>
+                        <a href="{{ url_for('products') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-shopping-bag me-2"></i>Continue Shopping
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="card shadow-soft mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-question-circle me-2"></i>Need Help?
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">If you have any questions about your order, please contact us:</p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-phone text-primary me-2"></i>
+                            <a href="tel:+15551234567" class="text-decoration-none">+1 (555) 123-4567</a>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-envelope text-primary me-2"></i>
+                            <a href="mailto:support@mediplant.com" class="text-decoration-none">support@mediplant.com</a>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-clock text-primary me-2"></i>
+                            Mon-Fri: 9AM-6PM EST
+                        </li>
+                    </ul>
+                    <div class="text-center mt-3">
+                        <a href="#" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-comments me-2"></i>Live Chat
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Tracking -->
+            <div class="card shadow-soft mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-map-marker-alt me-2"></i>Track Your Order
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">You'll receive tracking information via email once your order ships.</p>
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Order #{{ order.id }}" readonly>
+                        <button class="btn btn-outline-primary" type="button" onclick="trackOrder()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">Tracking will be available within 24 hours of shipment.</small>
+                </div>
+            </div>
+
+            <!-- Special Care Instructions -->
+            <div class="alert alert-info">
+                <h6 class="alert-heading">
+                    <i class="fas fa-leaf me-2"></i>Plant Care Reminder
+                </h6>
+                <p class="mb-2">Your plants will arrive with care instructions. For immediate help:</p>
+                <ul class="mb-0">
+                    <li>Unpack immediately upon arrival</li>
+                    <li>Water lightly if soil feels dry</li>
+                    <li>Place in indirect sunlight initially</li>
+                    <li>Allow 1-2 weeks for adjustment</li>
+                </ul>
+            </div>
+
+            <!-- Email Confirmation -->
+            <div class="card shadow-soft">
+                <div class="card-body text-center">
+                    <i class="fas fa-envelope-check fa-2x text-success mb-3"></i>
+                    <h6 class="fw-semibold">Confirmation Email Sent</h6>
+                    <p class="text-muted mb-3">We've sent order details to {{ order.email }}</p>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="resendEmail()">
+                        <i class="fas fa-redo me-2"></i>Resend Email
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Products -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="text-primary mb-4">
+                <i class="fas fa-heart me-2"></i>You Might Also Love
+            </h3>
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="card product-card h-100 shadow-soft">
+                        <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" 
+                             class="card-img-top" alt="Ginger Root">
+                        <div class="card-body">
+                            <h6 class="card-title">Fresh Ginger Root</h6>
+                            <p class="card-text text-muted small">Organic ginger for digestive health</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="price">₹936</span>
+                                <a href="#" class="btn btn-outline-primary btn-sm">Add to Cart</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="card product-card h-100 shadow-soft">
+                        <img src="https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" 
+                             class="card-img-top" alt="Lavender">
+                        <div class="card-body">
+                            <h6 class="card-title">Lavender Plant</h6>
+                            <p class="card-text text-muted small">Calming aromatic herb for relaxation</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="price">₹1,499</span>
+                                <a href="#" class="btn btn-outline-primary btn-sm">Add to Cart</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="card product-card h-100 shadow-soft">
+                        <img src="https://images.unsplash.com/photo-1573386604248-4e1c16c4eb90?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" 
+                             class="card-img-top" alt="Herbal Tea">
+                        <div class="card-body">
+                            <h6 class="card-title">Immunity Tea Blend</h6>
+                            <p class="card-text text-muted small">Boost your immune system naturally</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="price">₹1,499</span>
+                                <a href="#" class="btn btn-outline-primary btn-sm">Add to Cart</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="card product-card h-100 shadow-soft">
+                        <img src="https://images.unsplash.com/photo-1609501676725-7186f80f26ea?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" 
+                             class="card-img-top" alt="Essential Oil">
+                        <div class="card-body">
+                            <h6 class="card-title">Tea Tree Oil</h6>
+                            <p class="card-text text-muted small">Pure essential oil for skin care</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="price">₹1,649</span>
+                                <a href="#" class="btn btn-outline-primary btn-sm">Add to Cart</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Print order function
+function printOrder() {
+    window.print();
+}
+
+// Download invoice function
+function downloadInvoice() {
+    // In a real app, this would generate and download a PDF
+    showToast('Invoice download will be available soon!', 'info');
+}
+
+// Track order function
+function trackOrder() {
+    showToast('Tracking information will be sent via email once shipped!', 'info');
+}
+
+// Resend email function
+function resendEmail() {
+    showToast('Confirmation email has been resent!', 'success');
+}
+
+// Auto-scroll to success message with animation
+document.addEventListener('DOMContentLoaded', function() {
+    // Add animation to success icon
+    const successIcon = document.querySelector('.success-icon i');
+    if (successIcon) {
+        successIcon.style.transform = 'scale(0)';
+        successIcon.style.transition = 'transform 0.5s ease';
+        
+        setTimeout(function() {
+            successIcon.style.transform = 'scale(1)';
+        }, 300);
+    }
+    
+    // Animate timeline items
+    const timelineItems = document.querySelectorAll('.timeline-item');
+    timelineItems.forEach(function(item, index) {
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(-20px)';
+        item.style.transition = 'all 0.3s ease';
+        
+        setTimeout(function() {
+            item.style.opacity = '1';
+            item.style.transform = 'translateX(0)';
+        }, (index + 1) * 200);
+    });
+    
+    // Show estimated delivery date
+    showEstimatedDelivery();
+});
+
+// Show estimated delivery date
+function showEstimatedDelivery() {
+    const deliveryDate = new Date();
+    deliveryDate.setDate(deliveryDate.getDate() + 7); // Add 7 days
+    
+    const options = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    };
+    
+    const formattedDate = deliveryDate.toLocaleDateString('en-US', options);
+    
+    // Update delivery estimate if element exists
+    const deliveryElement = document.querySelector('.delivery-estimate');
+    if (deliveryElement) {
+        deliveryElement.textContent = `Expected by ${formattedDate}`;
+    }
+}
+
+// Confetti animation for order success
+function showConfetti() {
+    // Simple confetti effect
+    for (let i = 0; i < 50; i++) {
+        createConfetti();
+    }
+}
+
+function createConfetti() {
+    const confetti = document.createElement('div');
+    confetti.style.cssText = `
+        position: fixed;
+        top: -10px;
+        left: ${Math.random() * 100}vw;
+        width: 10px;
+        height: 10px;
+        background: ${['#004030', '#4A9782', '#DCD0A8'][Math.floor(Math.random() * 3)]};
+        z-index: 1000;
+        pointer-events: none;
+        animation: fall 3s linear forwards;
+    `;
+    
+    document.body.appendChild(confetti);
+    
+    setTimeout(() => confetti.remove(), 3000);
+}
+
+// Add CSS for confetti animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fall {
+        to {
+            transform: translateY(100vh) rotate(360deg);
+            opacity: 0;
+        }
+    }
+    
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e9ecef;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 30px;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -38px;
+        top: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+        font-size: 14px;
+    }
+    
+    .timeline-item.completed .timeline-marker {
+        background: var(--success-color);
+        color: white;
+    }
+    
+    .timeline-item.active .timeline-marker {
+        background: var(--primary-color);
+        color: white;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(0, 64, 48, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(0, 64, 48, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(0, 64, 48, 0); }
+    }
+    
+    .timeline-content h6 {
+        margin-bottom: 5px;
+        color: var(--primary-color);
+    }
+`;
+document.head.appendChild(style);
+
+// Show confetti on page load
+setTimeout(showConfetti, 500);
+</script>
+{% endblock %}

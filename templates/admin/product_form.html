@@ -1,0 +1,812 @@
+{% extends "base.html" %}
+
+{% block title %}{% if product %}Edit Product{% else %}Add Product{% endif %} - MediPlant Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Admin Sidebar -->
+        <div class="col-lg-2 admin-sidebar">
+            <div class="admin-nav">
+                <h6 class="text-white px-3 mb-3">
+                    <i class="fas fa-user-shield me-2"></i>Admin Panel
+                </h6>
+                
+                <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-link">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+                <a href="{{ url_for('admin_products') }}" class="admin-nav-link active">
+                    <i class="fas fa-seedling me-2"></i>Products
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="admin-nav-link">
+                    <i class="fas fa-users me-2"></i>Users
+                </a>
+                <a href="#" class="admin-nav-link">
+                    <i class="fas fa-box me-2"></i>Orders
+                </a>
+                <a href="#" class="admin-nav-link">
+                    <i class="fas fa-tags me-2"></i>Categories
+                </a>
+                <a href="#" class="admin-nav-link">
+                    <i class="fas fa-chart-bar me-2"></i>Analytics
+                </a>
+                <a href="#" class="admin-nav-link">
+                    <i class="fas fa-cog me-2"></i>Settings
+                </a>
+                
+                <hr class="my-3 border-secondary">
+                
+                <a href="{{ url_for('index') }}" class="admin-nav-link">
+                    <i class="fas fa-home me-2"></i>View Site
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-10 admin-content">
+            <!-- Page Header -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('admin_products') }}">Products</a></li>
+                            <li class="breadcrumb-item active">{% if product %}Edit Product{% else %}Add Product{% endif %}</li>
+                        </ol>
+                    </nav>
+                    <h2 class="fw-bold text-primary mb-2">
+                        {% if product %}Edit Product{% else %}Add New Product{% endif %}
+                    </h2>
+                    <p class="text-muted">
+                        {% if product %}Update the details of {{ product.name }}{% else %}Add a new medicinal plant to your inventory{% endif %}
+                    </p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('admin_products') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Products
+                    </a>
+                    {% if product %}
+                    <a href="{{ url_for('product_detail', id=product.id) }}" class="btn btn-outline-primary ms-2" target="_blank">
+                        <i class="fas fa-eye me-2"></i>View Product
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Product Form -->
+            <form method="POST" enctype="multipart/form-data" id="productForm">
+                <div class="row">
+                    <!-- Main Form -->
+                    <div class="col-lg-8">
+                        <!-- Basic Information -->
+                        <div class="card shadow-soft mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>Basic Information
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label for="name" class="form-label">Product Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="name" name="name" 
+                                               value="{{ product.name if product else '' }}" required
+                                               placeholder="e.g., Organic Turmeric Root">
+                                        <div class="form-text">Enter a clear, descriptive name for your product</div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="category_id" class="form-label">Category <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="category_id" name="category_id" required>
+                                            <option value="">Select a category</option>
+                                            {% for category in categories %}
+                                            <option value="{{ category.id }}" 
+                                                    {% if product and product.category_id == category.id %}selected{% endif %}>
+                                                {{ category.name }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="scientific_name" class="form-label">Scientific Name</label>
+                                        <input type="text" class="form-control" id="scientific_name" name="scientific_name" 
+                                               value="{{ product.scientific_name if product else '' }}"
+                                               placeholder="e.g., Curcuma longa">
+                                        <div class="form-text">Latin/scientific name if applicable</div>
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
+                                        <textarea class="form-control" id="description" name="description" rows="4" required
+                                                  placeholder="Describe the medicinal properties, benefits, and uses...">{{ product.description if product else '' }}</textarea>
+                                        <div class="form-text">Provide detailed information about the plant's benefits and uses</div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="origin" class="form-label">Origin</label>
+                                        <input type="text" class="form-control" id="origin" name="origin" 
+                                               value="{{ product.origin if product else '' }}"
+                                               placeholder="e.g., India, Himalayas">
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="growing_conditions" class="form-label">Growing Conditions</label>
+                                        <input type="text" class="form-control" id="growing_conditions" name="growing_conditions" 
+                                               value="{{ product.growing_conditions if product else '' }}"
+                                               placeholder="e.g., Full sun, well-drained soil">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pricing & Inventory -->
+                        <div class="card shadow-soft mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-dollar-sign me-2"></i>Pricing & Inventory
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="price" class="form-label">Price <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="price" name="price" 
+                                                   value="{{ product.price if product else '' }}" 
+                                                   step="0.01" min="0" required placeholder="0.00">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <label for="stock_quantity" class="form-label">Stock Quantity <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" id="stock_quantity" name="stock_quantity" 
+                                               value="{{ product.stock_quantity if product else '' }}" 
+                                               min="0" required placeholder="0">
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <label for="unit" class="form-label">Unit</label>
+                                        <select class="form-select" id="unit" name="unit">
+                                            <option value="piece" {% if product and product.unit == 'piece' %}selected{% endif %}>Piece</option>
+                                            <option value="kg" {% if product and product.unit == 'kg' %}selected{% endif %}>Kilogram</option>
+                                            <option value="g" {% if product and product.unit == 'g' %}selected{% endif %}>Gram</option>
+                                            <option value="lb" {% if product and product.unit == 'lb' %}selected{% endif %}>Pound</option>
+                                            <option value="oz" {% if product and product.unit == 'oz' %}selected{% endif %}>Ounce</option>
+                                            <option value="bundle" {% if product and product.unit == 'bundle' %}selected{% endif %}>Bundle</option>
+                                            <option value="pot" {% if product and product.unit == 'pot' %}selected{% endif %}>Pot</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="sku" class="form-label">SKU</label>
+                                        <input type="text" class="form-control" id="sku" name="sku" 
+                                               value="{{ product.sku if product else '' }}"
+                                               placeholder="Auto-generated if empty">
+                                        <div class="form-text">Stock Keeping Unit for inventory tracking</div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="weight" class="form-label">Weight (kg)</label>
+                                        <input type="number" class="form-control" id="weight" name="weight" 
+                                               value="{{ product.weight if product else '' }}" 
+                                               step="0.01" min="0" placeholder="0.00">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Images -->
+                        <div class="card shadow-soft mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-images me-2"></i>Product Images
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label for="main_image" class="form-label">Main Image {% if not product %}<span class="text-danger">*</span>{% endif %}</label>
+                                        <input type="file" class="form-control" id="main_image" name="main_image" 
+                                               accept="image/*" {% if not product %}required{% endif %}>
+                                        <div class="form-text">Upload the primary product image (JPG, PNG, WebP)</div>
+                                        {% if product and product.image_url %}
+                                        <div class="mt-2">
+                                            <img src="{{ product.image_url }}" class="img-thumbnail" width="120" height="120" alt="Current image">
+                                            <small class="d-block text-muted">Current image</small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <label for="gallery_images" class="form-label">Gallery Images</label>
+                                        <input type="file" class="form-control" id="gallery_images" name="gallery_images" 
+                                               accept="image/*" multiple>
+                                        <div class="form-text">Upload additional product images (optional)</div>
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <label for="image_url" class="form-label">Or Image URL</label>
+                                        <input type="url" class="form-control" id="image_url" name="image_url" 
+                                               value="{{ product.image_url if product else '' }}"
+                                               placeholder="https://example.com/image.jpg">
+                                        <div class="form-text">Alternative: provide a direct link to the image</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Medical Information -->
+                        <div class="card shadow-soft mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-medkit me-2"></i>Medical Information
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="medicinal_uses" class="form-label">Medicinal Uses</label>
+                                        <textarea class="form-control" id="medicinal_uses" name="medicinal_uses" rows="3"
+                                                  placeholder="e.g., Anti-inflammatory, digestive aid, immune booster...">{{ product.medicinal_uses if product else '' }}</textarea>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="preparation_method" class="form-label">Preparation Method</label>
+                                        <textarea class="form-control" id="preparation_method" name="preparation_method" rows="3"
+                                                  placeholder="e.g., Boil in water for 10 minutes, grind into powder...">{{ product.preparation_method if product else '' }}</textarea>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="dosage" class="form-label">Recommended Dosage</label>
+                                        <textarea class="form-control" id="dosage" name="dosage" rows="2"
+                                                  placeholder="e.g., 1-2 teaspoons daily, consult physician...">{{ product.dosage if product else '' }}</textarea>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="precautions" class="form-label">Precautions & Warnings</label>
+                                        <textarea class="form-control" id="precautions" name="precautions" rows="2"
+                                                  placeholder="e.g., Not suitable for pregnant women, may cause allergic reactions...">{{ product.precautions if product else '' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar -->
+                    <div class="col-lg-4">
+                        <!-- Quick Actions -->
+                        <div class="card shadow-soft mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>{% if product %}Update Product{% else %}Save Product{% endif %}
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="saveDraft()">
+                                        <i class="fas fa-file-alt me-2"></i>Save as Draft
+                                    </button>
+                                    {% if product %}
+                                    <button type="button" class="btn btn-outline-info" onclick="duplicateProduct()">
+                                        <i class="fas fa-copy me-2"></i>Duplicate Product
+                                    </button>
+                                    {% endif %}
+                                    <button type="button" class="btn btn-outline-warning" onclick="previewProduct()">
+                                        <i class="fas fa-eye me-2"></i>Preview
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Status -->
+                        <div class="card shadow-soft mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-toggle-on me-2"></i>Product Status
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                           {% if not product or product.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        Product is active
+                                    </label>
+                                    <div class="form-text">Active products are visible to customers</div>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured" 
+                                           {% if product and product.is_featured %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_featured">
+                                        Featured product
+                                    </label>
+                                    <div class="form-text">Featured products appear on homepage</div>
+                                </div>
+                                
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="track_inventory" name="track_inventory" 
+                                           {% if not product or product.track_inventory %}checked{% endif %}>
+                                    <label class="form-check-label" for="track_inventory">
+                                        Track inventory
+                                    </label>
+                                    <div class="form-text">Monitor stock levels for this product</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SEO Settings -->
+                        <div class="card shadow-soft mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-search me-2"></i>SEO Settings
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="meta_title" class="form-label">Meta Title</label>
+                                    <input type="text" class="form-control" id="meta_title" name="meta_title" 
+                                           value="{{ product.meta_title if product else '' }}"
+                                           maxlength="60" placeholder="SEO-friendly title">
+                                    <div class="form-text">60 characters max</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="meta_description" class="form-label">Meta Description</label>
+                                    <textarea class="form-control" id="meta_description" name="meta_description" rows="3"
+                                              maxlength="160" placeholder="Brief description for search engines">{{ product.meta_description if product else '' }}</textarea>
+                                    <div class="form-text">160 characters max</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="tags" class="form-label">Tags</label>
+                                    <input type="text" class="form-control" id="tags" name="tags" 
+                                           value="{{ product.tags if product else '' }}"
+                                           placeholder="medicinal, organic, herbal">
+                                    <div class="form-text">Comma-separated keywords</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Statistics -->
+                        {% if product %}
+                        <div class="card shadow-soft">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-chart-line me-2"></i>Product Statistics
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3 text-center">
+                                    <div class="col-6">
+                                        <div class="stat-mini">
+                                            <div class="stat-mini-number">{{ product.views or 0 }}</div>
+                                            <div class="stat-mini-label">Views</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="stat-mini">
+                                            <div class="stat-mini-number">{{ product.orders_count or 0 }}</div>
+                                            <div class="stat-mini-label">Orders</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="stat-mini">
+                                            <div class="stat-mini-number">{{ "%.1f"|format(product.rating or 0) }}</div>
+                                            <div class="stat-mini-label">Rating</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="stat-mini">
+                                            <div class="stat-mini-number">{{ product.reviews|length }}</div>
+                                            <div class="stat-mini-label">Reviews</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Product Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <!-- Preview content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Form validation and handling
+document.getElementById('productForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (validateForm()) {
+        this.submit();
+    }
+});
+
+function validateForm() {
+    let isValid = true;
+    const requiredFields = ['name', 'description', 'category_id', 'price', 'stock_quantity'];
+    
+    requiredFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            field.classList.remove('is-invalid');
+        }
+    });
+    
+    // Validate price
+    const price = document.getElementById('price');
+    if (price.value && parseFloat(price.value) < 0) {
+        price.classList.add('is-invalid');
+        isValid = false;
+    }
+    
+    // Validate stock
+    const stock = document.getElementById('stock_quantity');
+    if (stock.value && parseInt(stock.value) < 0) {
+        stock.classList.add('is-invalid');
+        isValid = false;
+    }
+    
+    if (!isValid) {
+        showToast('Please fill in all required fields correctly', 'error');
+    }
+    
+    return isValid;
+}
+
+// Auto-generate SKU
+document.getElementById('name').addEventListener('input', function() {
+    const sku = document.getElementById('sku');
+    if (!sku.value) {
+        const name = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6);
+        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        sku.value = `MP-${name}-${random}`;
+    }
+});
+
+// Image preview
+document.getElementById('main_image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Create or update preview
+            let preview = document.querySelector('.image-preview');
+            if (!preview) {
+                preview = document.createElement('div');
+                preview.className = 'image-preview mt-2';
+                e.target.parentNode.appendChild(preview);
+            }
+            preview.innerHTML = `
+                <img src="${e.target.result}" class="img-thumbnail" width="120" height="120" alt="Preview">
+                <small class="d-block text-muted">Preview</small>
+            `;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Character counters
+function setupCharacterCounter(fieldId, maxLength) {
+    const field = document.getElementById(fieldId);
+    if (field) {
+        const counter = document.createElement('small');
+        counter.className = 'form-text text-end';
+        field.parentNode.appendChild(counter);
+        
+        function updateCounter() {
+            const remaining = maxLength - field.value.length;
+            counter.textContent = `${field.value.length}/${maxLength} characters`;
+            counter.className = remaining < 10 ? 'form-text text-end text-danger' : 'form-text text-end text-muted';
+        }
+        
+        field.addEventListener('input', updateCounter);
+        updateCounter();
+    }
+}
+
+setupCharacterCounter('meta_title', 60);
+setupCharacterCounter('meta_description', 160);
+
+// Quick Actions
+function saveDraft() {
+    const form = document.getElementById('productForm');
+    const formData = new FormData(form);
+    formData.append('is_draft', 'true');
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Draft saved successfully', 'success');
+        } else {
+            showToast('Error saving draft', 'error');
+        }
+    });
+}
+
+function duplicateProduct() {
+    if (confirm('Create a duplicate of this product?')) {
+        const form = document.getElementById('productForm');
+        const formData = new FormData(form);
+        formData.append('duplicate', 'true');
+        
+        // Clear unique fields
+        formData.set('name', formData.get('name') + ' (Copy)');
+        formData.set('sku', '');
+        
+        fetch('/admin/products/create', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Product duplicated successfully', 'success');
+                window.location.href = `/admin/products/${data.product_id}/edit`;
+            } else {
+                showToast('Error duplicating product', 'error');
+            }
+        });
+    }
+}
+
+function previewProduct() {
+    const form = document.getElementById('productForm');
+    const formData = new FormData(form);
+    
+    // Create preview content
+    const previewContent = `
+        <div class="row">
+            <div class="col-md-6">
+                <img src="${formData.get('image_url') || 'https://via.placeholder.com/400x300'}" 
+                     class="img-fluid rounded" alt="Product preview">
+            </div>
+            <div class="col-md-6">
+                <h4>${formData.get('name') || 'Product Name'}</h4>
+                <p class="text-muted">${formData.get('scientific_name') || ''}</p>
+                <h5 class="text-primary">$${formData.get('price') || '0.00'}</h5>
+                <p>${formData.get('description') || 'No description'}</p>
+                <div class="mt-3">
+                    <span class="badge bg-primary">${document.querySelector('#category_id option:checked')?.text || 'No category'}</span>
+                    <span class="badge bg-success">${formData.get('stock_quantity')} in stock</span>
+                </div>
+            </div>
+        </div>
+        ${formData.get('medicinal_uses') ? `
+        <div class="mt-4">
+            <h6>Medicinal Uses</h6>
+            <p>${formData.get('medicinal_uses')}</p>
+        </div>
+        ` : ''}
+    `;
+    
+    document.getElementById('previewContent').innerHTML = previewContent;
+    new bootstrap.Modal(document.getElementById('previewModal')).show();
+}
+
+// Auto-save functionality
+let autoSaveTimeout;
+function scheduleAutoSave() {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = setTimeout(() => {
+        saveDraft();
+    }, 30000); // Auto-save every 30 seconds
+}
+
+// Attach auto-save to form changes
+document.getElementById('productForm').addEventListener('input', scheduleAutoSave);
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey || e.metaKey) {
+        switch(e.key) {
+            case 's':
+                e.preventDefault();
+                document.getElementById('productForm').dispatchEvent(new Event('submit'));
+                break;
+            case 'p':
+                e.preventDefault();
+                previewProduct();
+                break;
+        }
+    }
+});
+
+// Initialize features
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Focus first field
+    document.getElementById('name').focus();
+});
+
+// Save form data to localStorage
+window.addEventListener('beforeunload', function() {
+    const form = document.getElementById('productForm');
+    const formData = new FormData(form);
+    const data = {};
+    
+    for (let [key, value] of formData.entries()) {
+        if (typeof value === 'string') {
+            data[key] = value;
+        }
+    }
+    
+    localStorage.setItem('productDraft', JSON.stringify(data));
+});
+</script>
+
+{% if not product %}
+<script>
+// Load saved draft for new products only
+document.addEventListener('DOMContentLoaded', function() {
+    const savedDraft = localStorage.getItem('productDraft');
+    if (savedDraft) {
+        if (confirm('Load saved draft?')) {
+            const draft = JSON.parse(savedDraft);
+            Object.keys(draft).forEach(key => {
+                const field = document.getElementById(key);
+                if (field) {
+                    field.value = draft[key];
+                }
+            });
+        }
+    }
+});
+</script>
+{% endif %}
+
+{% if request.method == 'POST' %}
+<script>
+// Form success handler
+document.addEventListener('DOMContentLoaded', function() {
+    // Clear draft after successful save
+    localStorage.removeItem('productDraft');
+    showToast('Product saved successfully!', 'success');
+});
+</script>
+{% endif %}
+
+<style>
+.admin-nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.card-header h5, .card-header h6 {
+    color: #004030;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #004030;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #4A9782;
+    box-shadow: 0 0 0 0.2rem rgba(74, 151, 130, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: #4A9782;
+    border-color: #4A9782;
+}
+
+.btn-primary {
+    background-color: #4A9782;
+    border-color: #4A9782;
+}
+
+.btn-primary:hover {
+    background-color: #004030;
+    border-color: #004030;
+}
+
+.breadcrumb-item a {
+    color: #4A9782;
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    color: #004030;
+}
+
+.stat-mini {
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 8px;
+}
+
+.stat-mini-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #004030;
+}
+
+.stat-mini-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.is-invalid {
+    border-color: #dc3545;
+}
+
+.is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.image-preview img {
+    object-fit: cover;
+    border: 2px solid #dee2e6;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: #4A9782;
+    border-color: #4A9782;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-outline-info:hover {
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+}
+
+.btn-outline-warning:hover {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+
+@media (max-width: 768px) {
+    .admin-content {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+</style>
+{% endblock %}

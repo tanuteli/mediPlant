@@ -1,0 +1,707 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - MediPlant{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-6 fw-bold text-primary mb-2">
+                <i class="fas fa-credit-card me-3"></i>Checkout
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}" class="text-decoration-none">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('cart') }}" class="text-decoration-none">Cart</a></li>
+                    <li class="breadcrumb-item active">Checkout</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Checkout Progress -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-soft">
+                <div class="card-body">
+                    <div class="checkout-progress">
+                        <div class="progress mb-3">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 33%" aria-valuenow="33" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="step active">
+                                    <i class="fas fa-shopping-cart fa-2x text-primary mb-2"></i>
+                                    <h6 class="fw-semibold">Cart</h6>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="step active">
+                                    <i class="fas fa-credit-card fa-2x text-primary mb-2"></i>
+                                    <h6 class="fw-semibold">Checkout</h6>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="step">
+                                    <i class="fas fa-check-circle fa-2x text-muted mb-2"></i>
+                                    <h6 class="text-muted">Complete</h6>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('place_order') }}" class="needs-validation" novalidate>
+        <div class="row">
+            <!-- Checkout Form -->
+            <div class="col-lg-8">
+                <!-- Shipping Information -->
+                <div class="card shadow-soft mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-truck me-2"></i>Shipping Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="firstName" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="firstName" name="first_name" required>
+                                <div class="invalid-feedback">Please provide your first name.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="lastName" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="lastName" name="last_name" required>
+                                <div class="invalid-feedback">Please provide your last name.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                            <div class="invalid-feedback">Please provide a valid email address.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" required>
+                            <div class="invalid-feedback">Please provide your phone number.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Street Address</label>
+                            <textarea class="form-control" id="address" name="shipping_address" rows="3" 
+                                      placeholder="Enter your complete address" required></textarea>
+                            <div class="invalid-feedback">Please provide your shipping address.</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="city" class="form-label">City</label>
+                                <input type="text" class="form-control" id="city" name="city" required>
+                                <div class="invalid-feedback">Please provide your city.</div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="state" class="form-label">State</label>
+                                <select class="form-select" id="state" name="state" required>
+                                    <option value="">Choose...</option>
+                                    <option value="CA">California</option>
+                                    <option value="NY">New York</option>
+                                    <option value="TX">Texas</option>
+                                    <option value="FL">Florida</option>
+                                    <option value="IL">Illinois</option>
+                                    <!-- Add more states as needed -->
+                                </select>
+                                <div class="invalid-feedback">Please select your state.</div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="zip" class="form-label">ZIP Code</label>
+                                <input type="text" class="form-control" id="zip" name="zip" required>
+                                <div class="invalid-feedback">Please provide your ZIP code.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="sameAsBilling">
+                            <label class="form-check-label" for="sameAsBilling">
+                                Billing address same as shipping address
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Information -->
+                <div class="card shadow-soft mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-credit-card me-2"></i>Payment Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Payment Method Selection -->
+                        <div class="mb-4">
+                            <h6 class="fw-semibold mb-3">Select Payment Method</h6>
+                            <div class="row g-3">
+                                <!-- UPI Payment -->
+                                <div class="col-md-6">
+                                    <div class="form-check payment-option">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="upi" value="upi" checked>
+                                        <label class="form-check-label w-100" for="upi">
+                                            <div class="card h-100">
+                                                <div class="card-body text-center">
+                                                    <i class="fas fa-mobile-alt fa-2x text-primary mb-2"></i>
+                                                    <h6 class="fw-semibold">UPI</h6>
+                                                    <small class="text-muted">Google Pay, PhonePe, Paytm, BHIM</small>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Razorpay -->
+                                <div class="col-md-6">
+                                    <div class="form-check payment-option">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="razorpay" value="razorpay">
+                                        <label class="form-check-label w-100" for="razorpay">
+                                            <div class="card h-100">
+                                                <div class="card-body text-center">
+                                                    <i class="fas fa-credit-card fa-2x text-primary mb-2"></i>
+                                                    <h6 class="fw-semibold">Razorpay</h6>
+                                                    <small class="text-muted">Credit/Debit Cards, Net Banking</small>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Net Banking -->
+                                <div class="col-md-6">
+                                    <div class="form-check payment-option">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="netbanking" value="net_banking">
+                                        <label class="form-check-label w-100" for="netbanking">
+                                            <div class="card h-100">
+                                                <div class="card-body text-center">
+                                                    <i class="fas fa-university fa-2x text-primary mb-2"></i>
+                                                    <h6 class="fw-semibold">Net Banking</h6>
+                                                    <small class="text-muted">SBI, ICICI, HDFC, Axis & more</small>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Cash on Delivery -->
+                                <div class="col-md-6">
+                                    <div class="form-check payment-option">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="cod" value="cash_on_delivery">
+                                        <label class="form-check-label w-100" for="cod">
+                                            <div class="card h-100">
+                                                <div class="card-body text-center">
+                                                    <i class="fas fa-money-bill-wave fa-2x text-primary mb-2"></i>
+                                                    <h6 class="fw-semibold">Cash on Delivery</h6>
+                                                    <small class="text-muted">Pay when you receive</small>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- UPI Form -->
+                        <div id="upiForm">
+                            <h6 class="fw-semibold mb-3">UPI Payment Details</h6>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label for="upiId" class="form-label">UPI ID</label>
+                                    <input type="text" class="form-control" id="upiId" name="upi_id" placeholder="yourname@paytm / yourname@googlepay">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Credit Card Form -->
+                        <div id="creditCardForm">
+                            <div class="mb-3">
+                                <label for="cardNumber" class="form-label">Card Number</label>
+                                <input type="text" class="form-control" id="cardNumber" name="card_number" 
+                                       placeholder="1234 5678 9012 3456" maxlength="19">
+                                <div class="invalid-feedback">Please provide a valid card number.</div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="expiryMonth" class="form-label">Expiry Month</label>
+                                    <select class="form-select" id="expiryMonth" name="expiry_month">
+                                        <option value="">MM</option>
+                                        <option value="01">01</option>
+                                        <option value="02">02</option>
+                                        <option value="03">03</option>
+                                        <option value="04">04</option>
+                                        <option value="05">05</option>
+                                        <option value="06">06</option>
+                                        <option value="07">07</option>
+                                        <option value="08">08</option>
+                                        <option value="09">09</option>
+                                        <option value="10">10</option>
+                                        <option value="11">11</option>
+                                        <option value="12">12</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="expiryYear" class="form-label">Expiry Year</label>
+                                    <select class="form-select" id="expiryYear" name="expiry_year">
+                                        <option value="">YYYY</option>
+                                        <option value="2024">2024</option>
+                                        <option value="2025">2025</option>
+                                        <option value="2026">2026</option>
+                                        <option value="2027">2027</option>
+                                        <option value="2028">2028</option>
+                                        <option value="2029">2029</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="cvv" class="form-label">CVV</label>
+                                    <input type="text" class="form-control" id="cvv" name="cvv" 
+                                           placeholder="123" maxlength="4">
+                                    <div class="invalid-feedback">Please provide CVV.</div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="cardName" class="form-label">Name on Card</label>
+                                <input type="text" class="form-control" id="cardName" name="card_name" 
+                                       placeholder="John Doe">
+                                <div class="invalid-feedback">Please provide the name on card.</div>
+                            </div>
+                        </div>
+
+                        <!-- PayPal Form -->
+                        <div id="paypalForm" style="display: none;">
+                            <div class="text-center p-4">
+                                <i class="fab fa-paypal fa-4x text-primary mb-3"></i>
+                                <h5>Pay with PayPal</h5>
+                                <p class="text-muted">You will be redirected to PayPal to complete your payment securely.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Notes -->
+                <div class="card shadow-soft mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-sticky-note me-2"></i>Order Notes (Optional)
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <textarea class="form-control" name="order_notes" rows="3" 
+                                  placeholder="Any special instructions for your order..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="col-lg-4">
+                <div class="card shadow-soft sticky-top" style="top: 100px;">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-receipt me-2"></i>Order Summary
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Cart Items -->
+                        <div class="order-items mb-3">
+                            {% for item in cart_items %}
+                            <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                                <img src="{{ item.image_url or 'https://images.unsplash.com/photo-1518799175676-a0fed7996acb?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&q=80' }}" 
+                                     class="rounded me-3" alt="{{ item.name }}" style="width: 50px; height: 50px; object-fit: cover;">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1 small">{{ item.name }}</h6>
+                                    <small class="text-muted">Qty: {{ item.quantity }}</small>
+                                </div>
+                                <strong class="text-primary">{{ item.subtotal|inr }}</strong>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Cost Breakdown -->
+                        <div class="cost-breakdown">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Subtotal:</span>
+                                <span>{{ total|inr }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Shipping:</span>
+                                <span>
+                                    {% if total >= 50 %}
+                                        <span class="text-success">FREE</span>
+                                    {% else %}
+                                        ₹449
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>GST (18%):</span>
+                                <span>{{ (total * 0.18)|inr }}</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between mb-3">
+                                <strong>Total:</strong>
+                                <strong class="text-primary fs-5">
+                                    {{ (total + (449/75 if total < 50 else 0) + (total * 0.18))|inr }}
+                                </strong>
+                            </div>
+                        </div>
+
+                        <!-- Terms and Conditions -->
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="terms" required>
+                            <label class="form-check-label small" for="terms">
+                                I agree to the <a href="#" class="text-primary">Terms & Conditions</a> 
+                                and <a href="#" class="text-primary">Privacy Policy</a>
+                            </label>
+                            <div class="invalid-feedback">You must agree to the terms.</div>
+                        </div>
+
+                        <!-- Place Order Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="placeOrderBtn">
+                                <i class="fas fa-lock me-2"></i>Place Order Securely
+                            </button>
+                        </div>
+
+                        <!-- Security Info -->
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                Your payment information is encrypted and secure
+                            </small>
+                        </div>
+
+                        <!-- Money Back Guarantee -->
+                        <div class="alert alert-success mt-3">
+                            <div class="text-center">
+                                <i class="fas fa-medal mb-2 d-block"></i>
+                                <strong>30-Day Money Back Guarantee</strong>
+                                <p class="small mb-0 mt-2">Not satisfied? Get your money back within 30 days.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Payment method selection
+document.querySelectorAll('input[name="payment_method"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        const creditCardForm = document.getElementById('creditCardForm');
+        const paypalForm = document.getElementById('paypalForm');
+        
+        if (this.value === 'credit_card') {
+            creditCardForm.style.display = 'block';
+            paypalForm.style.display = 'none';
+            // Enable credit card validation
+            enableCreditCardValidation();
+        } else if (this.value === 'paypal') {
+            creditCardForm.style.display = 'none';
+            paypalForm.style.display = 'block';
+            // Disable credit card validation
+            disableCreditCardValidation();
+        }
+    });
+});
+
+// Credit card number formatting
+document.getElementById('cardNumber').addEventListener('input', function() {
+    let value = this.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+    let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+    if (formattedValue !== this.value) {
+        this.value = formattedValue;
+    }
+});
+
+// CVV validation
+document.getElementById('cvv').addEventListener('input', function() {
+    this.value = this.value.replace(/[^0-9]/g, '');
+});
+
+// Enable credit card validation
+function enableCreditCardValidation() {
+    const creditCardFields = ['cardNumber', 'expiryMonth', 'expiryYear', 'cvv', 'cardName'];
+    creditCardFields.forEach(function(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.required = true;
+        }
+    });
+}
+
+// Disable credit card validation
+function disableCreditCardValidation() {
+    const creditCardFields = ['cardNumber', 'expiryMonth', 'expiryYear', 'cvv', 'cardName'];
+    creditCardFields.forEach(function(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.required = false;
+        }
+    });
+}
+
+// Form submission
+document.querySelector('form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const placeOrderBtn = document.getElementById('placeOrderBtn');
+    const originalText = placeOrderBtn.innerHTML;
+    
+    // Show loading state
+    placeOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing Order...';
+    placeOrderBtn.disabled = true;
+    
+    // Validate form
+    if (this.checkValidity()) {
+        // Simulate order processing
+        setTimeout(function() {
+            // Submit the form for real
+            document.querySelector('form').submit();
+        }, 2000);
+    } else {
+        // Restore button if validation fails
+        setTimeout(function() {
+            placeOrderBtn.innerHTML = originalText;
+            placeOrderBtn.disabled = false;
+        }, 1000);
+        
+        this.classList.add('was-validated');
+    }
+});
+
+// Auto-fill billing address
+document.getElementById('sameAsBilling').addEventListener('change', function() {
+    if (this.checked) {
+        // In a real app, you would copy shipping to billing fields
+        showToast('Billing address set same as shipping address', 'info');
+    }
+});
+
+// Card type detection
+document.getElementById('cardNumber').addEventListener('input', function() {
+    const cardNumber = this.value.replace(/\s/g, '');
+    const cardType = detectCardType(cardNumber);
+    
+    // Remove existing card type classes
+    this.classList.remove('visa', 'mastercard', 'amex');
+    
+    if (cardType) {
+        this.classList.add(cardType);
+        
+        // Update visual indicator
+        const cardIcon = document.querySelector('.card-type-icon') || createCardIcon();
+        updateCardIcon(cardIcon, cardType);
+    }
+});
+
+function detectCardType(cardNumber) {
+    const patterns = {
+        visa: /^4/,
+        mastercard: /^5[1-5]/,
+        amex: /^3[47]/
+    };
+    
+    for (const [type, pattern] of Object.entries(patterns)) {
+        if (pattern.test(cardNumber)) {
+            return type;
+        }
+    }
+    return null;
+}
+
+function createCardIcon() {
+    const icon = document.createElement('i');
+    icon.className = 'card-type-icon fas fa-credit-card position-absolute';
+    icon.style.cssText = 'right: 10px; top: 50%; transform: translateY(-50%); z-index: 10;';
+    
+    const cardNumberField = document.getElementById('cardNumber');
+    cardNumberField.parentNode.style.position = 'relative';
+    cardNumberField.parentNode.appendChild(icon);
+    
+    return icon;
+}
+
+function updateCardIcon(icon, cardType) {
+    const iconClasses = {
+        visa: 'fab fa-cc-visa text-primary',
+        mastercard: 'fab fa-cc-mastercard text-warning',
+        amex: 'fab fa-cc-amex text-info'
+    };
+    
+    icon.className = `card-type-icon ${iconClasses[cardType] || 'fas fa-credit-card'}`;
+}
+
+// Real-time validation feedback
+document.querySelectorAll('input, select, textarea').forEach(function(field) {
+    field.addEventListener('blur', function() {
+        if (this.checkValidity()) {
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+        } else {
+            this.classList.remove('is-valid');
+            this.classList.add('is-invalid');
+        }
+    });
+});
+
+// Initialize credit card validation on page load
+document.addEventListener('DOMContentLoaded', function() {
+    enableCreditCardValidation();
+});
+</script>
+
+<style>
+.payment-option .form-check-input {
+    position: absolute;
+    opacity: 0;
+}
+
+.payment-option .card {
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.payment-option input:checked + label .card {
+    border-color: var(--primary-color);
+    background-color: var(--light-color);
+}
+
+.payment-option:hover .card {
+    border-color: var(--secondary-color);
+}
+
+.checkout-progress .step {
+    opacity: 0.5;
+}
+
+.checkout-progress .step.active {
+    opacity: 1;
+}
+
+.payment-form {
+    display: none;
+}
+
+.payment-form.active {
+    display: block;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle payment method switching
+    const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
+    const paymentForms = {
+        'upi': document.getElementById('upiForm'),
+        'razorpay': document.getElementById('creditCardForm'),
+        'net_banking': document.getElementById('netBankingForm'),
+        'cash_on_delivery': document.getElementById('codForm')
+    };
+    
+    // Add payment form containers for missing methods
+    if (!document.getElementById('netBankingForm')) {
+        const netBankingForm = document.createElement('div');
+        netBankingForm.id = 'netBankingForm';
+        netBankingForm.className = 'payment-form';
+        netBankingForm.innerHTML = `
+            <h6 class="fw-semibold mb-3">Select Your Bank</h6>
+            <select class="form-select" name="bank_name">
+                <option value="">Choose your bank</option>
+                <option value="sbi">State Bank of India</option>
+                <option value="icici">ICICI Bank</option>
+                <option value="hdfc">HDFC Bank</option>
+                <option value="axis">Axis Bank</option>
+                <option value="kotak">Kotak Mahindra Bank</option>
+                <option value="pnb">Punjab National Bank</option>
+            </select>
+        `;
+        document.getElementById('upiForm').insertAdjacentElement('afterend', netBankingForm);
+        paymentForms['net_banking'] = netBankingForm;
+    }
+    
+    if (!document.getElementById('codForm')) {
+        const codForm = document.createElement('div');
+        codForm.id = 'codForm';
+        codForm.className = 'payment-form';
+        codForm.innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Cash on Delivery</strong><br>
+                Pay when your order is delivered to your doorstep. Additional COD charges may apply.
+            </div>
+        `;
+        document.getElementById('netBankingForm').insertAdjacentElement('afterend', codForm);
+        paymentForms['cash_on_delivery'] = codForm;
+    }
+    
+    function showPaymentForm(method) {
+        // Hide all payment forms
+        Object.values(paymentForms).forEach(form => {
+            if (form) form.style.display = 'none';
+        });
+        
+        // Show selected payment form
+        if (paymentForms[method]) {
+            paymentForms[method].style.display = 'block';
+        }
+    }
+    
+    // Set initial form
+    showPaymentForm('upi');
+    
+    // Add event listeners
+    paymentMethods.forEach(method => {
+        method.addEventListener('change', function() {
+            if (this.checked) {
+                showPaymentForm(this.value);
+            }
+        });
+    });
+    
+    // Form validation
+    const checkoutForm = document.querySelector('form');
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', function(e) {
+            const selectedMethod = document.querySelector('input[name="payment_method"]:checked');
+            
+            if (selectedMethod.value === 'upi') {
+                const upiId = document.getElementById('upiId');
+                if (!upiId.value.trim()) {
+                    e.preventDefault();
+                    alert('Please enter a valid UPI ID');
+                    upiId.focus();
+                    return;
+                }
+            }
+            
+            if (selectedMethod.value === 'net_banking') {
+                const bankSelect = document.querySelector('select[name="bank_name"]');
+                if (!bankSelect.value) {
+                    e.preventDefault();
+                    alert('Please select your bank');
+                    bankSelect.focus();
+                    return;
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
