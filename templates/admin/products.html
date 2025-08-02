@@ -211,11 +211,11 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{{ url_for('product_detail', id=product.id) }}" 
+                                            <a href="{{ url_for('product_detail', product_id=product.id) }}" 
                                                class="btn btn-outline-primary btn-sm" title="View Product" target="_blank">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{{ url_for('admin_edit_product', id=product.id) }}" 
+                                            <a href="{{ url_for('admin_edit_product', product_id=product.id) }}" 
                                                class="btn btn-outline-secondary btn-sm" title="Edit Product">
                                                 <i class="fas fa-edit"></i>
                                             </a>
@@ -283,7 +283,7 @@
                                             {% endfor %}
                                         </div>
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{{ url_for('admin_edit_product', id=product.id) }}" 
+                                            <a href="{{ url_for('admin_edit_product', product_id=product.id) }}" 
                                                class="btn btn-outline-primary" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
