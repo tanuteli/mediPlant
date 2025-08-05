@@ -358,7 +358,7 @@ function sortProducts(sortBy) {
 
 function getPrice(productElement) {
     const priceText = productElement.querySelector('.price').textContent;
-    return parseFloat(priceText.replace('$', ''));
+    return parseFloat(priceText.replace('₹', '').replace(',', ''));
 }
 
 function getName(productElement) {
@@ -504,5 +504,69 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Add to wishlist function
+function addToWishlist(productId) {
+    const button = event.target.closest('button');
+    const icon = button.querySelector('i');
+    
+    // Make AJAX request to add to wishlist
+    fetch('/add_to_wishlist', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: 'product_id=' + productId
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+            button.classList.add('text-danger');
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.message, 'warning');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error adding to wishlist', 'danger');
+    });
+}
+
+// Add to cart function
+function addToCart(productId) {
+    const button = event.target.closest('button');
+    
+    // Make AJAX request to add to cart
+    fetch('/add_to_cart', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: 'product_id=' + productId + '&quantity=1'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Add animation
+            button.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                button.style.transform = 'scale(1)';
+            }, 150);
+            
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.message, 'warning');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error adding to cart', 'danger');
+    });
+}
 </script>
 {% endblock %}

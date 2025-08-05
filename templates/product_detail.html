@@ -588,17 +588,30 @@ function addToWishlist(productId) {
     const button = event.target.closest('button');
     const icon = button.querySelector('i');
     
-    if (icon.classList.contains('far')) {
-        icon.classList.remove('far');
-        icon.classList.add('fas');
-        button.classList.add('text-danger');
-        showToast('Added to wishlist!', 'success');
-    } else {
-        icon.classList.remove('fas');
-        icon.classList.add('far');
-        button.classList.remove('text-danger');
-        showToast('Removed from wishlist!', 'info');
-    }
+    // Make AJAX request to add to wishlist
+    fetch('/add_to_wishlist', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: 'product_id=' + productId
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+            button.classList.add('text-danger');
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.message, 'warning');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error adding to wishlist', 'danger');
+    });
 }
 
 // Share product

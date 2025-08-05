@@ -2,14 +2,82 @@ import os
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime
 import secrets
 
 app = Flask(__name__)
 app.secret_key = 'mediplant_secret_key_2025'
 
-# Currency conversion rate (1 USD = 75 INR approximately)
-USD_TO_INR_RATE = 75
+# File upload configuration
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+# Ensure upload folder exists
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def update_product_rating(product_id):
+    """Update the average rating and total reviews for a product"""
+    conn = get_db_connection()
+    
+    # Calculate average rating and total reviews
+    rating_stats = conn.execute('''
+        SELECT 
+            AVG(CAST(rating AS REAL)) as avg_rating,
+            COUNT(*) as total_reviews
+        FROM reviews 
+        WHERE product_id = ?
+    ''', (product_id,)).fetchone()
+    
+    avg_rating = rating_stats['avg_rating'] or 0
+    total_reviews = rating_stats['total_reviews'] or 0
+    
+    # Update product
+    conn.execute('''
+        UPDATE products 
+        SET average_rating = ?, total_reviews = ?
+        WHERE id = ?
+    ''', (avg_rating, total_reviews, product_id))
+    
+    conn.commit()
+    conn.close()
+
+def calculate_order_total(subtotal):
+    """Calculate final order total with taxes and shipping"""
+    shipping = 0 if subtotal >= FREE_SHIPPING_THRESHOLD else SHIPPING_CHARGE
+    gst = subtotal * GST_RATE
+    total = subtotal + shipping + gst
+    
+    return {
+        'subtotal': subtotal,
+        'shipping': shipping,
+        'gst': gst,
+        'total': total,
+        'free_shipping_threshold': FREE_SHIPPING_THRESHOLD
+    }
+
+# Currency configuration - Store prices in INR directly
+# Shipping and tax configuration
+FREE_SHIPPING_THRESHOLD = 2000  # INR
+SHIPPING_CHARGE = 99  # INR
+GST_RATE = 0.18  # 18% GST
+
+# Indian States
+INDIAN_STATES = [
+    'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat',
+    'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh',
+    'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+    'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh',
+    'Uttarakhand', 'West Bengal', 'Andaman and Nicobar Islands', 'Chandigarh',
+    'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Jammu and Kashmir', 'Ladakh',
+    'Lakshadweep', 'Puducherry'
+]
 
 # Add custom filter for Indian currency formatting
 @app.template_filter('inr')
@@ -17,18 +85,16 @@ def format_inr(amount):
     """Format amount in Indian Rupees"""
     if amount is None:
         return "₹0.00"
-    # Convert USD to INR
-    inr_amount = float(amount) * USD_TO_INR_RATE
-    return f"₹{inr_amount:,.2f}"
+    # Prices are already in INR
+    return f"₹{float(amount):,.2f}"
 
 @app.template_filter('inr_plain')
 def format_inr_plain(amount):
     """Format amount in Indian Rupees without symbol"""
     if amount is None:
         return "0.00"
-    # Convert USD to INR
-    inr_amount = float(amount) * USD_TO_INR_RATE
-    return f"{inr_amount:,.2f}"
+    # Prices are already in INR
+    return f"{float(amount):,.2f}"
 
 # Database configuration
 DATABASE = 'mediplant.db'
@@ -51,6 +117,9 @@ def init_db():
             full_name TEXT NOT NULL,
             phone TEXT,
             address TEXT,
+            city TEXT,
+            state TEXT,
+            postal_code TEXT,
             role TEXT DEFAULT 'user',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             is_active BOOLEAN DEFAULT 1
@@ -83,6 +152,8 @@ def init_db():
             usage_instructions TEXT,
             warnings TEXT,
             is_active BOOLEAN DEFAULT 1,
+            average_rating REAL DEFAULT 0,
+            total_reviews INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (category_id) REFERENCES categories (id)
         )
@@ -109,6 +180,16 @@ def init_db():
             total_amount REAL,
             status TEXT DEFAULT 'pending',
             shipping_address TEXT,
+            city TEXT,
+            state TEXT,
+            postal_code TEXT,
+            phone TEXT,
+            payment_method TEXT DEFAULT 'cod',
+            payment_status TEXT DEFAULT 'pending',
+            tracking_number TEXT,
+            estimated_delivery TIMESTAMP,
+            delivered_at TIMESTAMP,
+            notes TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
@@ -191,13 +272,13 @@ def admin_required(f):
 def index():
     conn = get_db_connection()
     
-    # Get featured products (latest 6 products)
+    # Get featured products based on highest ratings and recent activity
     featured_products = conn.execute('''
         SELECT p.*, c.name as category_name 
         FROM products p 
         LEFT JOIN categories c ON p.category_id = c.id 
         WHERE p.is_active = 1 
-        ORDER BY p.created_at DESC 
+        ORDER BY p.average_rating DESC, p.total_reviews DESC, p.created_at DESC 
         LIMIT 6
     ''').fetchall()
     
@@ -384,6 +465,10 @@ def add_to_cart():
     conn.commit()
     conn.close()
     
+    # Check if it's an AJAX request
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('Content-Type') == 'application/x-www-form-urlencoded':
+        return jsonify({'success': True, 'message': 'Product added to cart!'})
+    
     flash('Product added to cart!', 'success')
     return redirect(url_for('product_detail', product_id=product_id))
 
@@ -399,10 +484,11 @@ def cart():
         WHERE c.user_id = ?
     ''', (session['user_id'],)).fetchall()
     
-    total = sum(item['subtotal'] for item in cart_items)
+    subtotal = sum(item['subtotal'] for item in cart_items)
+    order_totals = calculate_order_total(subtotal)
     
     conn.close()
-    return render_template('cart.html', cart_items=cart_items, total=total)
+    return render_template('cart.html', cart_items=cart_items, **order_totals)
 
 @app.route('/checkout')
 @login_required
@@ -420,21 +506,27 @@ def checkout():
         flash('Your cart is empty.', 'warning')
         return redirect(url_for('cart'))
     
-    total = sum(item['subtotal'] for item in cart_items)
+    subtotal = sum(item['subtotal'] for item in cart_items)
+    order_totals = calculate_order_total(subtotal)
     
     conn.close()
-    return render_template('checkout.html', cart_items=cart_items, total=total)
+    return render_template('checkout.html', cart_items=cart_items, **order_totals)
 
 @app.route('/place_order', methods=['POST'])
 @login_required
 def place_order():
     shipping_address = request.form['shipping_address']
+    city = request.form.get('city', '')
+    state = request.form.get('state', '')
+    postal_code = request.form.get('postal_code', '')
+    phone = request.form.get('phone', '')
+    payment_method = request.form.get('payment_method', 'cod')
     
     conn = get_db_connection()
     
     # Get cart items
     cart_items = conn.execute('''
-        SELECT c.*, p.price
+        SELECT c.*, p.price, p.name
         FROM cart c
         JOIN products p ON c.product_id = p.id
         WHERE c.user_id = ?
@@ -442,16 +534,26 @@ def place_order():
     
     if not cart_items:
         flash('Your cart is empty.', 'warning')
+        conn.close()
         return redirect(url_for('cart'))
     
-    # Calculate total
-    total = sum(item['quantity'] * item['price'] for item in cart_items)
+    # Calculate total with taxes and shipping
+    subtotal = sum(item['quantity'] * item['price'] for item in cart_items)
+    order_totals = calculate_order_total(subtotal)
+    final_total = order_totals['total']
     
-    # Create order
+    # Generate tracking number
+    import random
+    import string
+    tracking_number = 'MP' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    
+    # Create order with final total
     cursor = conn.execute('''
-        INSERT INTO orders (user_id, total_amount, shipping_address)
-        VALUES (?, ?, ?)
-    ''', (session['user_id'], total, shipping_address))
+        INSERT INTO orders (user_id, total_amount, shipping_address, city, state, 
+                          postal_code, phone, payment_method, tracking_number)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (session['user_id'], final_total, shipping_address, city, state, postal_code, 
+          phone, payment_method, tracking_number))
     
     order_id = cursor.lastrowid
     
@@ -461,6 +563,12 @@ def place_order():
             INSERT INTO order_items (order_id, product_id, quantity, price)
             VALUES (?, ?, ?, ?)
         ''', (order_id, item['product_id'], item['quantity'], item['price']))
+        
+        # Update stock quantity
+        conn.execute('''
+            UPDATE products SET stock_quantity = stock_quantity - ?
+            WHERE id = ?
+        ''', (item['quantity'], item['product_id']))
     
     # Clear cart
     conn.execute('DELETE FROM cart WHERE user_id = ?', (session['user_id'],))
@@ -468,8 +576,8 @@ def place_order():
     conn.commit()
     conn.close()
     
-    flash('Order placed successfully!', 'success')
-    return redirect(url_for('order_confirmation', order_id=order_id))
+    flash('Order placed successfully! Check your orders to track delivery.', 'success')
+    return redirect(url_for('my_orders'))
 
 @app.route('/order_confirmation/<int:order_id>')
 @login_required
@@ -496,6 +604,339 @@ def order_confirmation(order_id):
     
     conn.close()
     return render_template('order_confirmation.html', order=order, order_items=order_items)
+
+@app.route('/my_orders')
+@login_required
+def my_orders():
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    offset = (page - 1) * per_page
+    
+    conn = get_db_connection()
+    
+    # Get user's orders
+    orders = conn.execute('''
+        SELECT o.*, COUNT(oi.id) as item_count
+        FROM orders o
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+        WHERE o.user_id = ?
+        GROUP BY o.id
+        ORDER BY o.created_at DESC
+        LIMIT ? OFFSET ?
+    ''', (session['user_id'], per_page, offset)).fetchall()
+    
+    # Get total count for pagination
+    total_orders = conn.execute('''
+        SELECT COUNT(*) as count FROM orders WHERE user_id = ?
+    ''', (session['user_id'],)).fetchone()['count']
+    
+    conn.close()
+    
+    # Calculate pagination
+    total_pages = (total_orders + per_page - 1) // per_page
+    has_prev = page > 1
+    has_next = page < total_pages
+    
+    return render_template('my_orders.html', 
+                         orders=orders, 
+                         page=page, 
+                         total_pages=total_pages,
+                         has_prev=has_prev, 
+                         has_next=has_next)
+
+@app.route('/order_detail/<int:order_id>')
+@login_required
+def order_detail(order_id):
+    conn = get_db_connection()
+    
+    # Get order details
+    order = conn.execute('''
+        SELECT o.*, u.full_name, u.email
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+        WHERE o.id = ? AND o.user_id = ?
+    ''', (order_id, session['user_id'])).fetchone()
+    
+    if not order:
+        flash('Order not found.', 'danger')
+        conn.close()
+        return redirect(url_for('my_orders'))
+    
+    # Get order items
+    order_items = conn.execute('''
+        SELECT oi.*, p.name, p.image_url, p.description
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.id
+        WHERE oi.order_id = ?
+    ''', (order_id,)).fetchall()
+    
+    conn.close()
+    return render_template('order_detail.html', order=order, order_items=order_items)
+
+@app.route('/add_review/<int:product_id>', methods=['POST'])
+@login_required
+def add_review(product_id):
+    rating = int(request.form['rating'])
+    review_text = request.form.get('review_text', '')
+    
+    if not (1 <= rating <= 5):
+        flash('Invalid rating. Please select a rating between 1 and 5.', 'danger')
+        return redirect(url_for('product_detail', product_id=product_id))
+    
+    conn = get_db_connection()
+    
+    # Check if user has already reviewed this product
+    existing_review = conn.execute('''
+        SELECT id FROM reviews WHERE user_id = ? AND product_id = ?
+    ''', (session['user_id'], product_id)).fetchone()
+    
+    if existing_review:
+        # Update existing review
+        conn.execute('''
+            UPDATE reviews SET rating = ?, review_text = ?
+            WHERE user_id = ? AND product_id = ?
+        ''', (rating, review_text, session['user_id'], product_id))
+        flash('Your review has been updated!', 'success')
+    else:
+        # Add new review
+        conn.execute('''
+            INSERT INTO reviews (user_id, product_id, rating, review_text)
+            VALUES (?, ?, ?, ?)
+        ''', (session['user_id'], product_id, rating, review_text))
+        flash('Thank you for your review!', 'success')
+    
+    conn.commit()
+    conn.close()
+    
+    # Update product rating
+    update_product_rating(product_id)
+    
+    return redirect(url_for('product_detail', product_id=product_id))
+
+@app.route('/delete_review/<int:review_id>', methods=['POST'])
+@login_required
+def delete_review(review_id):
+    conn = get_db_connection()
+    
+    # Get review to check ownership and get product_id
+    review = conn.execute('''
+        SELECT * FROM reviews WHERE id = ? AND user_id = ?
+    ''', (review_id, session['user_id'])).fetchone()
+    
+    if not review:
+        flash('Review not found or you do not have permission to delete it.', 'danger')
+    else:
+        product_id = review['product_id']
+        conn.execute('DELETE FROM reviews WHERE id = ?', (review_id,))
+        conn.commit()
+        flash('Review deleted successfully.', 'success')
+        
+        # Update product rating
+        update_product_rating(product_id)
+    
+    conn.close()
+    return redirect(request.referrer or url_for('index'))
+
+# Wishlist routes
+@app.route('/wishlist')
+@login_required
+def wishlist():
+    conn = get_db_connection()
+    
+    wishlist_items = conn.execute('''
+        SELECT w.*, p.name, p.price, p.image_url, p.stock_quantity, c.name as category_name
+        FROM wishlist w
+        JOIN products p ON w.product_id = p.id
+        LEFT JOIN categories c ON p.category_id = c.id
+        WHERE w.user_id = ? AND p.is_active = 1
+        ORDER BY w.created_at DESC
+    ''', (session['user_id'],)).fetchall()
+    
+    conn.close()
+    return render_template('wishlist.html', wishlist_items=wishlist_items)
+
+@app.route('/add_to_wishlist', methods=['POST'])
+@login_required
+def add_to_wishlist():
+    product_id = request.form['product_id']
+    
+    conn = get_db_connection()
+    
+    # Check if already in wishlist
+    existing = conn.execute('''
+        SELECT id FROM wishlist WHERE user_id = ? AND product_id = ?
+    ''', (session['user_id'], product_id)).fetchone()
+    
+    if existing:
+        message = 'Product is already in your wishlist.'
+        success = False
+    else:
+        conn.execute('''
+            INSERT INTO wishlist (user_id, product_id)
+            VALUES (?, ?)
+        ''', (session['user_id'], product_id))
+        conn.commit()
+        message = 'Product added to wishlist!'
+        success = True
+    
+    conn.close()
+    
+    # Check if it's an AJAX request
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': success, 'message': message})
+    
+    flash(message, 'success' if success else 'info')
+    return redirect(request.referrer or url_for('products'))
+
+@app.route('/remove_from_wishlist/<int:wishlist_id>', methods=['POST'])
+@login_required
+def remove_from_wishlist(wishlist_id):
+    conn = get_db_connection()
+    
+    # Verify ownership
+    wishlist_item = conn.execute('''
+        SELECT * FROM wishlist WHERE id = ? AND user_id = ?
+    ''', (wishlist_id, session['user_id'])).fetchone()
+    
+    if wishlist_item:
+        conn.execute('DELETE FROM wishlist WHERE id = ?', (wishlist_id,))
+        conn.commit()
+        flash('Product removed from wishlist.', 'success')
+    
+    conn.close()
+    return redirect(url_for('wishlist'))
+
+@app.route('/remove_from_wishlist', methods=['POST'])
+@login_required
+def remove_from_wishlist_ajax():
+    wishlist_id = request.form.get('wishlist_id')
+    
+    if not wishlist_id:
+        return jsonify({'success': False, 'message': 'Missing wishlist ID'})
+    
+    conn = get_db_connection()
+    
+    # Verify ownership
+    wishlist_item = conn.execute('''
+        SELECT * FROM wishlist WHERE id = ? AND user_id = ?
+    ''', (wishlist_id, session['user_id'])).fetchone()
+    
+    if wishlist_item:
+        conn.execute('DELETE FROM wishlist WHERE id = ?', (wishlist_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'message': 'Product removed from wishlist'})
+    else:
+        conn.close()
+        return jsonify({'success': False, 'message': 'Item not found or access denied'})
+
+@app.route('/move_to_cart/<int:wishlist_id>', methods=['POST'])
+@login_required
+def move_to_cart(wishlist_id):
+    conn = get_db_connection()
+    
+    # Get wishlist item
+    wishlist_item = conn.execute('''
+        SELECT * FROM wishlist WHERE id = ? AND user_id = ?
+    ''', (wishlist_id, session['user_id'])).fetchone()
+    
+    if wishlist_item:
+        product_id = wishlist_item['product_id']
+        
+        # Check if already in cart
+        existing_cart = conn.execute('''
+            SELECT * FROM cart WHERE user_id = ? AND product_id = ?
+        ''', (session['user_id'], product_id)).fetchone()
+        
+        if existing_cart:
+            # Update quantity
+            conn.execute('''
+                UPDATE cart SET quantity = quantity + 1 WHERE user_id = ? AND product_id = ?
+            ''', (session['user_id'], product_id))
+        else:
+            # Add to cart
+            conn.execute('''
+                INSERT INTO cart (user_id, product_id, quantity)
+                VALUES (?, ?, 1)
+            ''', (session['user_id'], product_id))
+        
+        # Remove from wishlist
+        conn.execute('DELETE FROM wishlist WHERE id = ?', (wishlist_id,))
+        conn.commit()
+        flash('Product moved to cart!', 'success')
+    
+    conn.close()
+    return redirect(url_for('wishlist'))
+
+@app.route('/cancel_order/<int:order_id>', methods=['POST'])
+@login_required
+def cancel_order(order_id):
+    conn = get_db_connection()
+    
+    # Get order to check ownership and status
+    order = conn.execute('''
+        SELECT * FROM orders WHERE id = ? AND user_id = ?
+    ''', (order_id, session['user_id'])).fetchone()
+    
+    if not order:
+        return jsonify({'success': False, 'message': 'Order not found'})
+    
+    if order['status'] != 'pending':
+        return jsonify({'success': False, 'message': 'Order cannot be cancelled'})
+    
+    # Update order status
+    conn.execute('''
+        UPDATE orders SET status = 'cancelled', notes = ?
+        WHERE id = ?
+    ''', (request.json.get('reason', 'Cancelled by customer'), order_id))
+    
+    # Restore stock quantities
+    order_items = conn.execute('''
+        SELECT product_id, quantity FROM order_items WHERE order_id = ?
+    ''', (order_id,)).fetchall()
+    
+    for item in order_items:
+        conn.execute('''
+            UPDATE products SET stock_quantity = stock_quantity + ?
+            WHERE id = ?
+        ''', (item['quantity'], item['product_id']))
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'success': True, 'message': 'Order cancelled successfully'})
+
+@app.route('/download_invoice/<int:order_id>')
+@login_required
+def download_invoice(order_id):
+    conn = get_db_connection()
+    
+    # Get order details
+    order = conn.execute('''
+        SELECT o.*, u.full_name, u.email
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+        WHERE o.id = ? AND o.user_id = ?
+    ''', (order_id, session['user_id'])).fetchone()
+    
+    if not order:
+        flash('Order not found.', 'danger')
+        conn.close()
+        return redirect(url_for('my_orders'))
+    
+    # Get order items
+    order_items = conn.execute('''
+        SELECT oi.*, p.name, p.description
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.id
+        WHERE oi.order_id = ?
+    ''', (order_id,)).fetchall()
+    
+    conn.close()
+    
+    # For now, render an invoice template
+    # In production, you might want to generate a PDF
+    return render_template('invoice.html', order=order, order_items=order_items)
 
 # Admin Routes
 @app.route('/admin')
@@ -550,11 +991,26 @@ def admin_add_product():
         detailed_description = request.form.get('detailed_description', '')
         price = float(request.form['price'])
         category_id = request.form['category_id']
-        image_url = request.form.get('image_url', '/static/images/default-product.jpg')
         stock_quantity = int(request.form.get('stock_quantity', 0))
         benefits = request.form.get('benefits', '')
         usage_instructions = request.form.get('usage_instructions', '')
         warnings = request.form.get('warnings', '')
+        
+        # Handle image upload or URL
+        image_url = request.form.get('image_url', '')
+        if 'main_image' in request.files and request.files['main_image'].filename:
+            file = request.files['main_image']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                # Create unique filename
+                import uuid
+                ext = filename.rsplit('.', 1)[1].lower()
+                filename = f"{uuid.uuid4().hex}.{ext}"
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(filepath)
+                image_url = f'/static/uploads/{filename}'
+        elif not image_url:
+            image_url = '/static/images/default-product.jpg'
         
         conn = get_db_connection()
         conn.execute('''
@@ -574,7 +1030,7 @@ def admin_add_product():
     categories = conn.execute('SELECT * FROM categories').fetchall()
     conn.close()
     
-    return render_template('admin/add_product.html', categories=categories)
+    return render_template('admin/product_form.html', categories=categories)
 
 @app.route('/admin/users')
 @admin_required
@@ -583,6 +1039,130 @@ def admin_users():
     users = conn.execute('SELECT * FROM users ORDER BY created_at DESC').fetchall()
     conn.close()
     return render_template('admin/users.html', users=users)
+
+@app.route('/admin/edit_user/<int:user_id>', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_user(user_id):
+    conn = get_db_connection()
+    
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        full_name = request.form['full_name']
+        phone = request.form.get('phone', '')
+        address = request.form.get('address', '')
+        city = request.form.get('city', '')
+        state = request.form.get('state', '')
+        postal_code = request.form.get('postal_code', '')
+        role = request.form.get('role', 'user')
+        is_active = 1 if request.form.get('is_active') else 0
+        
+        # Check if username/email exists for other users
+        existing_user = conn.execute('''
+            SELECT id FROM users 
+            WHERE (username = ? OR email = ?) AND id != ?
+        ''', (username, email, user_id)).fetchone()
+        
+        if existing_user:
+            flash('Username or email already exists for another user.', 'danger')
+        else:
+            conn.execute('''
+                UPDATE users SET 
+                    username = ?, email = ?, full_name = ?, phone = ?,
+                    address = ?, city = ?, state = ?, postal_code = ?,
+                    role = ?, is_active = ?
+                WHERE id = ?
+            ''', (username, email, full_name, phone, address, city, state, 
+                  postal_code, role, is_active, user_id))
+            
+            conn.commit()
+            flash('User updated successfully!', 'success')
+            conn.close()
+            return redirect(url_for('admin_users'))
+    
+    user = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
+    conn.close()
+    
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('admin_users'))
+    
+    return render_template('admin/edit_user.html', user=user, states=INDIAN_STATES)
+
+@app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
+@admin_required
+def admin_delete_user(user_id):
+    # Prevent admin from deleting themselves
+    if user_id == session['user_id']:
+        flash('You cannot delete your own account.', 'danger')
+        return redirect(url_for('admin_users'))
+    
+    conn = get_db_connection()
+    
+    # Check if user has orders
+    orders_count = conn.execute('SELECT COUNT(*) as count FROM orders WHERE user_id = ?', (user_id,)).fetchone()['count']
+    
+    if orders_count > 0:
+        # Deactivate instead of delete
+        conn.execute('UPDATE users SET is_active = 0 WHERE id = ?', (user_id,))
+        flash('User account deactivated (has order history).', 'warning')
+    else:
+        # Safe to delete
+        conn.execute('DELETE FROM users WHERE id = ?', (user_id,))
+        flash('User deleted successfully!', 'success')
+    
+    conn.commit()
+    conn.close()
+    return redirect(url_for('admin_users'))
+
+@app.route('/admin/add_user', methods=['GET', 'POST'])
+@admin_required
+def admin_add_user():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+        full_name = request.form['full_name']
+        phone = request.form.get('phone', '')
+        address = request.form.get('address', '')
+        city = request.form.get('city', '')
+        state = request.form.get('state', '')
+        postal_code = request.form.get('postal_code', '')
+        role = request.form.get('role', 'user')
+        
+        if not username or not email or not password or not full_name:
+            flash('Required fields must be filled.', 'danger')
+            return render_template('admin/add_user.html', states=INDIAN_STATES)
+        
+        conn = get_db_connection()
+        
+        # Check if user already exists
+        existing_user = conn.execute(
+            'SELECT id FROM users WHERE username = ? OR email = ?', 
+            (username, email)
+        ).fetchone()
+        
+        if existing_user:
+            flash('Username or email already exists.', 'danger')
+            conn.close()
+            return render_template('admin/add_user.html', states=INDIAN_STATES)
+        
+        # Create new user
+        password_hash = generate_password_hash(password)
+        conn.execute('''
+            INSERT INTO users (username, email, password_hash, full_name, phone,
+                             address, city, state, postal_code, role)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (username, email, password_hash, full_name, phone,
+              address, city, state, postal_code, role))
+        
+        conn.commit()
+        conn.close()
+        
+        flash('User created successfully!', 'success')
+        return redirect(url_for('admin_users'))
+    
+    return render_template('admin/add_user.html', states=INDIAN_STATES)
 
 @app.route('/admin/orders')
 @admin_required
@@ -686,6 +1266,54 @@ def admin_add_category():
     
     return render_template('admin/add_category.html')
 
+@app.route('/admin/edit_category/<int:category_id>', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_category(category_id):
+    conn = get_db_connection()
+    
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        image_url = request.form.get('image_url', '')
+        
+        conn.execute('''
+            UPDATE categories SET name = ?, description = ?, image_url = ?
+            WHERE id = ?
+        ''', (name, description, image_url, category_id))
+        
+        conn.commit()
+        conn.close()
+        
+        flash('Category updated successfully!', 'success')
+        return redirect(url_for('admin_categories'))
+    
+    category = conn.execute('SELECT * FROM categories WHERE id = ?', (category_id,)).fetchone()
+    conn.close()
+    
+    if not category:
+        flash('Category not found.', 'danger')
+        return redirect(url_for('admin_categories'))
+    
+    return render_template('admin/edit_category.html', category=category)
+
+@app.route('/admin/delete_category/<int:category_id>', methods=['POST'])
+@admin_required
+def admin_delete_category(category_id):
+    conn = get_db_connection()
+    
+    # Check if category has products
+    products_count = conn.execute('SELECT COUNT(*) as count FROM products WHERE category_id = ?', (category_id,)).fetchone()['count']
+    
+    if products_count > 0:
+        flash(f'Cannot delete category. It has {products_count} products associated with it.', 'danger')
+    else:
+        conn.execute('DELETE FROM categories WHERE id = ?', (category_id,))
+        conn.commit()
+        flash('Category deleted successfully!', 'success')
+    
+    conn.close()
+    return redirect(url_for('admin_categories'))
+
 @app.route('/admin/edit_product/<int:product_id>', methods=['GET', 'POST'])
 @admin_required
 def admin_edit_product(product_id):
@@ -697,12 +1325,31 @@ def admin_edit_product(product_id):
         detailed_description = request.form.get('detailed_description', '')
         price = float(request.form['price'])
         category_id = request.form['category_id']
-        image_url = request.form.get('image_url', '/static/images/default-product.jpg')
         stock_quantity = int(request.form.get('stock_quantity', 0))
         benefits = request.form.get('benefits', '')
         usage_instructions = request.form.get('usage_instructions', '')
         warnings = request.form.get('warnings', '')
         is_active = 1 if request.form.get('is_active') else 0
+        
+        # Get current product to preserve existing image if no new one uploaded
+        current_product = conn.execute('SELECT image_url FROM products WHERE id = ?', (product_id,)).fetchone()
+        image_url = current_product['image_url'] if current_product else '/static/images/default-product.jpg'
+        
+        # Handle image upload or URL
+        new_image_url = request.form.get('image_url', '')
+        if 'main_image' in request.files and request.files['main_image'].filename:
+            file = request.files['main_image']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                # Create unique filename
+                import uuid
+                ext = filename.rsplit('.', 1)[1].lower()
+                filename = f"{uuid.uuid4().hex}.{ext}"
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(filepath)
+                image_url = f'/static/uploads/{filename}'
+        elif new_image_url:
+            image_url = new_image_url
         
         conn.execute('''
             UPDATE products SET name = ?, description = ?, detailed_description = ?, 
@@ -738,6 +1385,73 @@ def admin_delete_product(product_id):
     
     flash('Product deactivated successfully!', 'success')
     return redirect(url_for('admin_products'))
+
+@app.route('/admin/analytics')
+@admin_required
+def admin_analytics():
+    conn = get_db_connection()
+    
+    # Sales analytics
+    monthly_sales = conn.execute('''
+        SELECT 
+            strftime('%Y-%m', created_at) as month,
+            COUNT(*) as order_count,
+            SUM(total_amount) as revenue
+        FROM orders 
+        WHERE status != 'cancelled'
+        GROUP BY strftime('%Y-%m', created_at)
+        ORDER BY month DESC
+        LIMIT 12
+    ''').fetchall()
+    
+    # Top selling products
+    top_products = conn.execute('''
+        SELECT 
+            p.name,
+            SUM(oi.quantity) as total_sold,
+            SUM(oi.quantity * oi.price) as revenue
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.id
+        JOIN orders o ON oi.order_id = o.id
+        WHERE o.status != 'cancelled'
+        GROUP BY p.id, p.name
+        ORDER BY total_sold DESC
+        LIMIT 10
+    ''').fetchall()
+    
+    # Order status distribution
+    order_stats = conn.execute('''
+        SELECT 
+            status,
+            COUNT(*) as count
+        FROM orders
+        GROUP BY status
+    ''').fetchall()
+    
+    # User registration trends
+    user_stats = conn.execute('''
+        SELECT 
+            strftime('%Y-%m', created_at) as month,
+            COUNT(*) as new_users
+        FROM users
+        WHERE role = 'user'
+        GROUP BY strftime('%Y-%m', created_at)
+        ORDER BY month DESC
+        LIMIT 12
+    ''').fetchall()
+    
+    conn.close()
+    
+    return render_template('admin/analytics.html', 
+                         monthly_sales=monthly_sales,
+                         top_products=top_products,
+                         order_stats=order_stats,
+                         user_stats=user_stats)
+
+@app.route('/admin/settings')
+@admin_required
+def admin_settings():
+    return render_template('admin/settings.html')
 
 if __name__ == '__main__':
     init_db()

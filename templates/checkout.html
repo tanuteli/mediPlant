@@ -108,20 +108,50 @@
                             <div class="col-md-3 mb-3">
                                 <label for="state" class="form-label">State</label>
                                 <select class="form-select" id="state" name="state" required>
-                                    <option value="">Choose...</option>
-                                    <option value="CA">California</option>
-                                    <option value="NY">New York</option>
-                                    <option value="TX">Texas</option>
-                                    <option value="FL">Florida</option>
-                                    <option value="IL">Illinois</option>
-                                    <!-- Add more states as needed -->
+                                    <option value="">Choose State...</option>
+                                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                    <option value="Assam">Assam</option>
+                                    <option value="Bihar">Bihar</option>
+                                    <option value="Chhattisgarh">Chhattisgarh</option>
+                                    <option value="Goa">Goa</option>
+                                    <option value="Gujarat">Gujarat</option>
+                                    <option value="Haryana">Haryana</option>
+                                    <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                    <option value="Jharkhand">Jharkhand</option>
+                                    <option value="Karnataka">Karnataka</option>
+                                    <option value="Kerala">Kerala</option>
+                                    <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                    <option value="Maharashtra">Maharashtra</option>
+                                    <option value="Manipur">Manipur</option>
+                                    <option value="Meghalaya">Meghalaya</option>
+                                    <option value="Mizoram">Mizoram</option>
+                                    <option value="Nagaland">Nagaland</option>
+                                    <option value="Odisha">Odisha</option>
+                                    <option value="Punjab">Punjab</option>
+                                    <option value="Rajasthan">Rajasthan</option>
+                                    <option value="Sikkim">Sikkim</option>
+                                    <option value="Tamil Nadu">Tamil Nadu</option>
+                                    <option value="Telangana">Telangana</option>
+                                    <option value="Tripura">Tripura</option>
+                                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                    <option value="Uttarakhand">Uttarakhand</option>
+                                    <option value="West Bengal">West Bengal</option>
+                                    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                                    <option value="Chandigarh">Chandigarh</option>
+                                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                                    <option value="Delhi">Delhi</option>
+                                    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                                    <option value="Ladakh">Ladakh</option>
+                                    <option value="Lakshadweep">Lakshadweep</option>
+                                    <option value="Puducherry">Puducherry</option>
                                 </select>
                                 <div class="invalid-feedback">Please select your state.</div>
                             </div>
                             <div class="col-md-3 mb-3">
-                                <label for="zip" class="form-label">ZIP Code</label>
-                                <input type="text" class="form-control" id="zip" name="zip" required>
-                                <div class="invalid-feedback">Please provide your ZIP code.</div>
+                                <label for="postal_code" class="form-label">PIN Code</label>
+                                <input type="text" class="form-control" id="postal_code" name="postal_code" pattern="[0-9]{6}" required>
+                                <div class="invalid-feedback">Please provide your 6-digit PIN code.</div>
                             </div>
                         </div>
                         
@@ -332,29 +362,35 @@
                         <div class="cost-breakdown">
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Subtotal:</span>
-                                <span>{{ total|inr }}</span>
+                                <span>{{ subtotal|inr }}</span>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Shipping:</span>
                                 <span>
-                                    {% if total >= 50 %}
+                                    {% if shipping == 0 %}
                                         <span class="text-success">FREE</span>
                                     {% else %}
-                                        ₹449
+                                        {{ shipping|inr }}
                                     {% endif %}
                                 </span>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span>GST (18%):</span>
-                                <span>{{ (total * 0.18)|inr }}</span>
+                                <span>{{ gst|inr }}</span>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between mb-3">
                                 <strong>Total:</strong>
                                 <strong class="text-primary fs-5">
-                                    {{ (total + (449/75 if total < 50 else 0) + (total * 0.18))|inr }}
+                                    {{ total|inr }}
                                 </strong>
                             </div>
+                            {% if subtotal < free_shipping_threshold %}
+                            <div class="alert alert-info small">
+                                <i class="fas fa-truck me-1"></i>
+                                Add {{ (free_shipping_threshold - subtotal)|inr }} more for FREE shipping!
+                            </div>
+                            {% endif %}
                         </div>
 
                         <!-- Terms and Conditions -->
@@ -458,8 +494,6 @@ function disableCreditCardValidation() {
 
 // Form submission
 document.querySelector('form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
     const placeOrderBtn = document.getElementById('placeOrderBtn');
     const originalText = placeOrderBtn.innerHTML;
     
@@ -467,22 +501,9 @@ document.querySelector('form').addEventListener('submit', function(e) {
     placeOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing Order...';
     placeOrderBtn.disabled = true;
     
-    // Validate form
-    if (this.checkValidity()) {
-        // Simulate order processing
-        setTimeout(function() {
-            // Submit the form for real
-            document.querySelector('form').submit();
-        }, 2000);
-    } else {
-        // Restore button if validation fails
-        setTimeout(function() {
-            placeOrderBtn.innerHTML = originalText;
-            placeOrderBtn.disabled = false;
-        }, 1000);
-        
-        this.classList.add('was-validated');
-    }
+    // Let the form submit naturally
+    // The form validation will be handled by browser
+    this.classList.add('was-validated');
 });
 
 // Auto-fill billing address

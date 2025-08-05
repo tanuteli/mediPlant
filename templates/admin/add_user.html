@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Add User - MediPlant Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Admin Sidebar -->
+        <div class="col-lg-2 admin-sidebar">
+            <div class="admin-nav">
+                <h6 class="text-white px-3 mb-3">
+                    <i class="fas fa-user-shield me-2"></i>Admin Panel
+                </h6>
+                
+                <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-link">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+                <a href="{{ url_for('admin_products') }}" class="admin-nav-link">
+                    <i class="fas fa-seedling me-2"></i>Products
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="admin-nav-link active">
+                    <i class="fas fa-users me-2"></i>Users
+                </a>
+                <a href="{{ url_for('admin_orders') }}" class="admin-nav-link">
+                    <i class="fas fa-box me-2"></i>Orders
+                </a>
+                <a href="{{ url_for('admin_categories') }}" class="admin-nav-link">
+                    <i class="fas fa-tags me-2"></i>Categories
+                </a>
+                <a href="{{ url_for('admin_analytics') }}" class="admin-nav-link">
+                    <i class="fas fa-chart-bar me-2"></i>Analytics
+                </a>
+                <a href="{{ url_for('admin_settings') }}" class="admin-nav-link">
+                    <i class="fas fa-cog me-2"></i>Settings
+                </a>
+                
+                <hr class="my-3 border-secondary">
+                
+                <a href="{{ url_for('index') }}" class="admin-nav-link">
+                    <i class="fas fa-home me-2"></i>View Site
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-10 admin-content">
+            <!-- Page Header -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h2 class="fw-bold text-primary mb-2">Add New User</h2>
+                    <p class="text-muted">Create a new user account</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Users
+                    </a>
+                </div>
+            </div>
+
+            <!-- User Form -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card shadow-soft">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-user-plus me-2"></i>User Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="username" name="username" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                        <input type="email" class="form-control" id="email" name="email" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                                        <input type="password" class="form-control" id="password" name="password" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="full_name" name="full_name" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="phone" class="form-label">Phone</label>
+                                        <input type="tel" class="form-control" id="phone" name="phone">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="role" class="form-label">Role</label>
+                                        <select class="form-select" id="role" name="role">
+                                            <option value="user">User</option>
+                                            <option value="admin">Admin</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="address" class="form-label">Address</label>
+                                        <textarea class="form-control" id="address" name="address" rows="2"></textarea>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="city" class="form-label">City</label>
+                                        <input type="text" class="form-control" id="city" name="city">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="state" class="form-label">State</label>
+                                        <select class="form-select" id="state" name="state">
+                                            <option value="">Choose State...</option>
+                                            {% for state in states %}
+                                            <option value="{{ state }}">{{ state }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="postal_code" class="form-label">PIN Code</label>
+                                        <input type="text" class="form-control" id="postal_code" name="postal_code" pattern="[0-9]{6}">
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Create User
+                                    </button>
+                                    <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary ms-2">
+                                        Cancel
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card shadow-soft">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>Guidelines
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <h6>User Creation Guidelines:</h6>
+                                <ul class="mb-0 small">
+                                    <li>Username must be unique</li>
+                                    <li>Email must be valid and unique</li>
+                                    <li>Password should be strong</li>
+                                    <li>Admin users can access admin panel</li>
+                                    <li>Regular users can only shop</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice #{{ order.id }} - MediPlant</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #4A9782;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4A9782;
+            margin-bottom: 10px;
+        }
+        .invoice-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .invoice-info, .billing-info {
+            flex: 1;
+        }
+        .invoice-info {
+            margin-right: 20px;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .table th, .table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .table th {
+            background-color: #4A9782;
+            color: white;
+            font-weight: bold;
+        }
+        .table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .total-section {
+            text-align: right;
+            margin-top: 30px;
+        }
+        .total-row {
+            margin-bottom: 10px;
+        }
+        .total-amount {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #4A9782;
+            border-top: 2px solid #4A9782;
+            padding-top: 10px;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-delivered {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-shipped {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        @media print {
+            body {
+                margin: 0;
+                padding: 15px;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">🌿 MediPlant</div>
+        <p>Premium Medicinal Plants & Ayurvedic Products</p>
+        <p style="margin: 0; font-size: 0.9em;">
+            Email: support@mediplant.com | Phone: +91-98765-43210<br>
+            Address: 123 Herbal Street, Wellness City, India - 110001
+        </p>
+    </div>
+
+    <!-- Invoice Title -->
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #4A9782; margin-bottom: 10px;">INVOICE</h1>
+        <h2 style="margin: 0;">Invoice #{{ order.id }}</h2>
+        <span class="status-badge status-{{ order.status }}">{{ order.status.upper() }}</span>
+    </div>
+
+    <!-- Invoice Details -->
+    <div class="invoice-details">
+        <div class="invoice-info">
+            <h3 style="color: #4A9782; border-bottom: 1px solid #ddd; padding-bottom: 5px;">Invoice Details</h3>
+            <p><strong>Invoice Number:</strong> MP-{{ order.id }}-2025</p>
+            <p><strong>Order Date:</strong> {{ order.created_at }}</p>
+            <p><strong>Payment Method:</strong> {{ order.payment_method.upper() if order.payment_method else 'COD' }}</p>
+            {% if order.tracking_number %}
+            <p><strong>Tracking Number:</strong> {{ order.tracking_number }}</p>
+            {% endif %}
+        </div>
+        
+        <div class="billing-info">
+            <h3 style="color: #4A9782; border-bottom: 1px solid #ddd; padding-bottom: 5px;">Billing Address</h3>
+            <p><strong>{{ order.full_name }}</strong></p>
+            <p>{{ order.email }}</p>
+            {% if order.phone %}
+            <p>Phone: {{ order.phone }}</p>
+            {% endif %}
+            <address style="font-style: normal;">
+                {{ order.shipping_address }}<br>
+                {% if order.city %}{{ order.city }}{% endif %}
+                {% if order.state and order.city %}, {% endif %}
+                {% if order.state %}{{ order.state }}{% endif %}
+                {% if order.postal_code %} - {{ order.postal_code }}{% endif %}
+            </address>
+        </div>
+    </div>
+
+    <!-- Order Items -->
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Description</th>
+                <th style="text-align: center;">Qty</th>
+                <th style="text-align: right;">Price</th>
+                <th style="text-align: right;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order_items %}
+            <tr>
+                <td><strong>{{ item.name }}</strong></td>
+                <td>{{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}</td>
+                <td style="text-align: center;">{{ item.quantity }}</td>
+                <td style="text-align: right;">{{ item.price|inr }}</td>
+                <td style="text-align: right;"><strong>{{ (item.price * item.quantity)|inr }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Total Section -->
+    <div class="total-section">
+        <div class="total-row">
+            <span>Subtotal: </span>
+            <span>{{ order.total_amount|inr }}</span>
+        </div>
+        <div class="total-row">
+            <span>Shipping: </span>
+            <span style="color: #28a745;">FREE</span>
+        </div>
+        <div class="total-row">
+            <span>Tax: </span>
+            <span>Included</span>
+        </div>
+        <div class="total-amount">
+            <span>Total Amount: </span>
+            <span>{{ order.total_amount|inr }}</span>
+        </div>
+    </div>
+
+    <!-- Additional Information -->
+    <div style="margin-top: 40px; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
+        <h4 style="color: #4A9782; margin-top: 0;">Important Information</h4>
+        <ul style="margin-bottom: 0;">
+            <li>All our products are 100% natural and organic</li>
+            <li>Please store medicinal plants in a cool, dry place</li>
+            <li>Consult with a healthcare provider before use</li>
+            <li>For any queries, contact us at support@mediplant.com</li>
+            <li>Return policy: 30 days from delivery date</li>
+        </ul>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>Thank you for choosing MediPlant!</strong></p>
+        <p>Your health is our priority. We appreciate your trust in our premium medicinal plants.</p>
+        <p style="margin: 10px 0;">
+            Follow us: 
+            <span style="margin: 0 10px;">📧 support@mediplant.com</span>
+            <span style="margin: 0 10px;">📱 @MediPlantIndia</span>
+            <span style="margin: 0 10px;">🌐 www.mediplant.com</span>
+        </p>
+        <hr style="margin: 20px 0;">
+        <p style="font-size: 0.8em; margin: 0;">
+            This is a computer-generated invoice. No signature required.<br>
+            MediPlant Pvt. Ltd. | CIN: U12345MH2025PTC123456 | GSTIN: 27AAAAA0000A1Z5
+        </p>
+    </div>
+
+    <!-- Print Button (hidden when printing) -->
+    <div class="no-print" style="text-align: center; margin-top: 30px;">
+        <button onclick="window.print()" style="background-color: #4A9782; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px;">
+            🖨️ Print Invoice
+        </button>
+        <button onclick="window.close()" style="background-color: #6c757d; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; margin-left: 10px;">
+            Close
+        </button>
+    </div>
+</body>
+</html>

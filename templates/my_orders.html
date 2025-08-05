@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}My Orders - MediPlant{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-6 fw-bold text-primary mb-2">
+                <i class="fas fa-box me-3"></i>My Orders
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}" class="text-decoration-none">Home</a></li>
+                    <li class="breadcrumb-item active">My Orders</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    {% if orders %}
+        <!-- Orders List -->
+        <div class="row">
+            <div class="col-12">
+                {% for order in orders %}
+                <div class="card shadow-soft mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1 fw-bold">Order #{{ order.id }}</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>Placed on {{ order.created_at }}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge 
+                                {% if order.status == 'pending' %}bg-warning
+                                {% elif order.status == 'confirmed' %}bg-info  
+                                {% elif order.status == 'shipped' %}bg-primary
+                                {% elif order.status == 'delivered' %}bg-success
+                                {% elif order.status == 'cancelled' %}bg-danger
+                                {% else %}bg-secondary{% endif %} fs-6">
+                                {% if order.status == 'pending' %}
+                                    <i class="fas fa-clock me-1"></i>Pending
+                                {% elif order.status == 'confirmed' %}
+                                    <i class="fas fa-check me-1"></i>Confirmed
+                                {% elif order.status == 'shipped' %}
+                                    <i class="fas fa-truck me-1"></i>Shipped
+                                {% elif order.status == 'delivered' %}
+                                    <i class="fas fa-check-circle me-1"></i>Delivered
+                                {% elif order.status == 'cancelled' %}
+                                    <i class="fas fa-times me-1"></i>Cancelled
+                                {% else %}
+                                    <i class="fas fa-info me-1"></i>{{ order.status.title() }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-box text-primary me-2"></i>
+                                    <span><strong>{{ order.item_count }}</strong> item{% if order.item_count != 1 %}s{% endif %}</span>
+                                </div>
+                                
+                                {% if order.tracking_number %}
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-shipping-fast text-info me-2"></i>
+                                    <span>Tracking: <strong>{{ order.tracking_number }}</strong></span>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-rupee-sign text-success me-2"></i>
+                                    <span>Total: <strong>{{ order.total_amount|inr }}</strong></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <a href="{{ url_for('order_detail', order_id=order.id) }}" 
+                                   class="btn btn-outline-primary me-2">
+                                    <i class="fas fa-eye me-1"></i>View Details
+                                </a>
+                                
+                                {% if order.status == 'delivered' %}
+                                <button class="btn btn-outline-success" onclick="downloadInvoice({{ order.id }})">
+                                    <i class="fas fa-download me-1"></i>Invoice
+                                </button>
+                                {% endif %}
+                                
+                                {% if order.status == 'pending' %}
+                                <button class="btn btn-outline-danger" onclick="cancelOrder({{ order.id }})">
+                                    <i class="fas fa-times me-1"></i>Cancel
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Order Progress -->
+                        {% if order.status in ['confirmed', 'shipped', 'delivered'] %}
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="order-progress">
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: 
+                                             {% if order.status == 'confirmed' %}33%
+                                             {% elif order.status == 'shipped' %}66%
+                                             {% elif order.status == 'delivered' %}100%
+                                             {% else %}0%{% endif %}" 
+                                             aria-valuenow="33" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <small class="text-{% if order.status in ['confirmed', 'shipped', 'delivered'] %}success{% else %}muted{% endif %}">
+                                                <i class="fas fa-check-circle"></i> Confirmed
+                                            </small>
+                                        </div>
+                                        <div class="col-4">
+                                            <small class="text-{% if order.status in ['shipped', 'delivered'] %}success{% else %}muted{% endif %}">
+                                                <i class="fas fa-truck"></i> Shipped
+                                            </small>
+                                        </div>
+                                        <div class="col-4">
+                                            <small class="text-{% if order.status == 'delivered' %}success{% else %}muted{% endif %}">
+                                                <i class="fas fa-home"></i> Delivered
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Pagination -->
+                {% if total_pages > 1 %}
+                <nav aria-label="Orders pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('my_orders', page=page-1) }}">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for p in range(1, total_pages + 1) %}
+                        <li class="page-item {% if p == page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('my_orders', page=p) }}">{{ p }}</a>
+                        </li>
+                        {% endfor %}
+                        
+                        {% if has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('my_orders', page=page+1) }}">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-soft">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-box display-1 text-muted mb-4"></i>
+                        <h3 class="text-muted mb-3">No Orders Yet</h3>
+                        <p class="text-muted mb-4">You haven't placed any orders yet. Start shopping for medicinal plants!</p>
+                        <a href="{{ url_for('products') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-seedling me-2"></i>Start Shopping
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Cancel Order Modal -->
+<div class="modal fade" id="cancelOrderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this order?</p>
+                <div class="mb-3">
+                    <label for="cancelReason" class="form-label">Reason for cancellation (optional)</label>
+                    <textarea class="form-control" id="cancelReason" rows="3" 
+                              placeholder="Please let us know why you're cancelling this order..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Order</button>
+                <button type="button" class="btn btn-danger" onclick="confirmCancel()">Cancel Order</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let orderToCancel = null;
+
+function cancelOrder(orderId) {
+    orderToCancel = orderId;
+    new bootstrap.Modal(document.getElementById('cancelOrderModal')).show();
+}
+
+function confirmCancel() {
+    if (orderToCancel) {
+        const reason = document.getElementById('cancelReason').value;
+        
+        fetch(`/cancel_order/${orderToCancel}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                reason: reason
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Order cancelled successfully', 'success');
+                location.reload();
+            } else {
+                showToast('Error cancelling order', 'error');
+            }
+        })
+        .catch(error => {
+            showToast('Error cancelling order', 'error');
+        });
+        
+        bootstrap.Modal.getInstance(document.getElementById('cancelOrderModal')).hide();
+    }
+}
+
+function downloadInvoice(orderId) {
+    window.open(`/download_invoice/${orderId}`, '_blank');
+}
+
+function showToast(message, type) {
+    // Create toast notification
+    const toastHtml = `
+        <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+    
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        document.body.appendChild(toastContainer);
+    }
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    const toast = new bootstrap.Toast(toastContainer.lastElementChild);
+    toast.show();
+}
+</script>
+
+<style>
+.order-progress .progress {
+    height: 8px;
+}
+
+.badge {
+    font-size: 0.875rem;
+}
+
+.card {
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.pagination {
+    --bs-pagination-active-bg: #4A9782;
+    --bs-pagination-active-border-color: #4A9782;
+}
+
+@media (max-width: 768px) {
+    .card-body .row .col-md-4 {
+        margin-top: 1rem;
+        text-align: left !important;
+    }
+    
+    .btn-group-vertical .btn {
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - MediPlant Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Admin Sidebar -->
+        <div class="col-lg-2 admin-sidebar">
+            <div class="admin-nav">
+                <h6 class="text-white px-3 mb-3">
+                    <i class="fas fa-user-shield me-2"></i>Admin Panel
+                </h6>
+                
+                <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-link">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+                <a href="{{ url_for('admin_products') }}" class="admin-nav-link">
+                    <i class="fas fa-seedling me-2"></i>Products
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="admin-nav-link">
+                    <i class="fas fa-users me-2"></i>Users
+                </a>
+                <a href="{{ url_for('admin_orders') }}" class="admin-nav-link">
+                    <i class="fas fa-box me-2"></i>Orders
+                </a>
+                <a href="{{ url_for('admin_categories') }}" class="admin-nav-link">
+                    <i class="fas fa-tags me-2"></i>Categories
+                </a>
+                <a href="{{ url_for('admin_analytics') }}" class="admin-nav-link active">
+                    <i class="fas fa-chart-bar me-2"></i>Analytics
+                </a>
+                <a href="{{ url_for('admin_settings') }}" class="admin-nav-link">
+                    <i class="fas fa-cog me-2"></i>Settings
+                </a>
+                
+                <hr class="my-3 border-secondary">
+                
+                <a href="{{ url_for('index') }}" class="admin-nav-link">
+                    <i class="fas fa-home me-2"></i>View Site
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-10 admin-content">
+            <!-- Page Header -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h2 class="fw-bold text-primary mb-2">Analytics & Reports</h2>
+                    <p class="text-muted">Insights and performance metrics for your business</p>
+                </div>
+            </div>
+
+            <!-- Sales Overview -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-soft">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-line me-2"></i>Monthly Sales Trends
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if monthly_sales %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>Orders</th>
+                                            <th>Revenue</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for sale in monthly_sales %}
+                                        <tr>
+                                            <td>{{ sale.month }}</td>
+                                            <td>{{ sale.order_count }}</td>
+                                            <td>{{ sale.revenue|inr }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No sales data available yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Products and Order Status -->
+            <div class="row mb-4">
+                <!-- Top Selling Products -->
+                <div class="col-lg-6">
+                    <div class="card shadow-soft">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-trophy me-2"></i>Top Selling Products
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if top_products %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Sold</th>
+                                            <th>Revenue</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for product in top_products %}
+                                        <tr>
+                                            <td>{{ product.name[:20] }}{% if product.name|length > 20 %}...{% endif %}</td>
+                                            <td>{{ product.total_sold }}</td>
+                                            <td>{{ product.revenue|inr }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No product sales data available yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Status Distribution -->
+                <div class="col-lg-6">
+                    <div class="card shadow-soft">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-pie-chart me-2"></i>Order Status Distribution
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if order_stats %}
+                            {% for stat in order_stats %}
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <span class="text-capitalize">{{ stat.status }}</span>
+                                </div>
+                                <div>
+                                    <span class="badge 
+                                        {% if stat.status == 'pending' %}bg-warning
+                                        {% elif stat.status == 'processing' %}bg-info
+                                        {% elif stat.status == 'shipped' %}bg-primary
+                                        {% elif stat.status == 'delivered' %}bg-success
+                                        {% elif stat.status == 'cancelled' %}bg-danger
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ stat.count }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <p class="text-muted">No order data available yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Registration Trends -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-soft">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-users me-2"></i>User Registration Trends
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if user_stats %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>New Users</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for stat in user_stats %}
+                                        <tr>
+                                            <td>{{ stat.month }}</td>
+                                            <td>{{ stat.new_users }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No user registration data available yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow-soft">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-download me-2"></i>Export Reports
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-3">Download detailed reports for further analysis</p>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <button class="btn btn-outline-primary btn-sm w-100" onclick="exportSalesReport()">
+                                        <i class="fas fa-chart-line me-2"></i>Sales Report
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-outline-success btn-sm w-100" onclick="exportProductReport()">
+                                        <i class="fas fa-seedling me-2"></i>Product Report
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-outline-info btn-sm w-100" onclick="exportUserReport()">
+                                        <i class="fas fa-users me-2"></i>User Report
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-outline-warning btn-sm w-100" onclick="exportOrderReport()">
+                                        <i class="fas fa-box me-2"></i>Order Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportSalesReport() {
+    showToast('Sales report export feature coming soon!', 'info');
+}
+
+function exportProductReport() {
+    showToast('Product report export feature coming soon!', 'info');
+}
+
+function exportUserReport() {
+    showToast('User report export feature coming soon!', 'info');
+}
+
+function exportOrderReport() {
+    showToast('Order report export feature coming soon!', 'info');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}My Wishlist - MediPlant{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-6 fw-bold text-primary mb-2">
+                <i class="fas fa-heart me-3"></i>My Wishlist
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}" class="text-decoration-none">Home</a></li>
+                    <li class="breadcrumb-item active">Wishlist</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    {% if wishlist_items %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-soft">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-heart me-2"></i>Saved Items ({{ wishlist_items|length }})
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="row g-0">
+                        {% for item in wishlist_items %}
+                        <div class="col-lg-6 col-xl-4">
+                            <div class="wishlist-item border-end border-bottom p-4" data-wishlist-id="{{ item.id }}">
+                                <div class="row align-items-center">
+                                    <!-- Product Image -->
+                                    <div class="col-4">
+                                        <img src="{{ item.image_url or 'https://images.unsplash.com/photo-1518799175676-a0fed7996acb?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80' }}" 
+                                             class="img-fluid rounded" alt="{{ item.name }}">
+                                    </div>
+                                    
+                                    <!-- Product Details -->
+                                    <div class="col-8">
+                                        <h6 class="mb-1">
+                                            <a href="{{ url_for('product_detail', product_id=item.product_id) }}" 
+                                               class="text-decoration-none text-primary">
+                                                {{ item.name }}
+                                            </a>
+                                        </h6>
+                                        <small class="text-muted">{{ item.category_name or 'Medicinal Plant' }}</small>
+                                        
+                                        <div class="mt-2">
+                                            <strong class="text-primary">{{ item.price|inr }}</strong>
+                                        </div>
+                                        
+                                        <div class="mt-2">
+                                            {% if item.stock_quantity > 0 %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>In Stock
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times me-1"></i>Out of Stock
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- Action Buttons -->
+                                        <div class="mt-3">
+                                            {% if item.stock_quantity > 0 %}
+                                                <button class="btn btn-primary btn-sm" onclick="addToCart('{{ item.product_id }}')">
+                                                    <i class="fas fa-shopping-cart me-1"></i>Add to Cart
+                                                </button>
+                                            {% endif %}
+                                            <button class="btn btn-outline-danger btn-sm" onclick="removeFromWishlist('{{ item.id }}')">
+                                                <i class="fas fa-trash me-1"></i>Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-shopping-cart fa-3x text-primary mb-3"></i>
+                            <h6>Add All to Cart</h6>
+                            <p class="text-muted small">Move all available items to your cart</p>
+                            <button class="btn btn-outline-primary" onclick="addAllToCart()">
+                                Add All Available
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-share-alt fa-3x text-success mb-3"></i>
+                            <h6>Share Wishlist</h6>
+                            <p class="text-muted small">Share your wishlist with friends</p>
+                            <button class="btn btn-outline-success" onclick="shareWishlist()">
+                                Share List
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Continue Shopping -->
+            <div class="text-center mt-4">
+                <a href="{{ url_for('products') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Continue Shopping
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Empty Wishlist -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto text-center">
+            <div class="card shadow-soft py-5">
+                <div class="card-body">
+                    <i class="fas fa-heart display-1 text-muted mb-4"></i>
+                    <h3 class="text-muted mb-3">Your wishlist is empty</h3>
+                    <p class="text-muted mb-4">
+                        Save your favorite medicinal plants and herbal products to your wishlist 
+                        for easy access later. Start exploring our collection!
+                    </p>
+                    <a href="{{ url_for('products') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-seedling me-2"></i>Explore Products
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Featured Categories -->
+            <div class="row mt-5 g-4">
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 text-center">
+                        <div class="card-body">
+                            <i class="fas fa-pepper-hot fa-3x text-primary mb-3"></i>
+                            <h6 class="fw-semibold">Herbs & Spices</h6>
+                            <p class="text-muted small">Fresh and dried herbs for culinary and medicinal use</p>
+                            <a href="{{ url_for('products', category=1) }}" class="btn btn-outline-primary btn-sm">Browse</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 text-center">
+                        <div class="card-body">
+                            <i class="fas fa-seedling fa-3x text-primary mb-3"></i>
+                            <h6 class="fw-semibold">Medicinal Plants</h6>
+                            <p class="text-muted small">Traditional medicinal plants with healing properties</p>
+                            <a href="{{ url_for('products', category=2) }}" class="btn btn-outline-primary btn-sm">Browse</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 text-center">
+                        <div class="card-body">
+                            <i class="fas fa-mug-hot fa-3x text-primary mb-3"></i>
+                            <h6 class="fw-semibold">Herbal Teas</h6>
+                            <p class="text-muted small">Therapeutic herbal tea blends for wellness</p>
+                            <a href="{{ url_for('products', category=5) }}" class="btn btn-outline-primary btn-sm">Browse</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add item to cart from wishlist
+function addToCart(productId) {
+    fetch('/add_to_cart', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: `product_id=${productId}&quantity=1`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Product added to cart!', 'success');
+            // Optionally remove from wishlist after adding to cart
+            // removeFromWishlist(wishlistId);
+        } else {
+            showToast(data.message || 'Failed to add to cart', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to add to cart', 'danger');
+    });
+}
+
+// Remove item from wishlist
+function removeFromWishlist(wishlistId) {
+    if (confirm('Are you sure you want to remove this item from your wishlist?')) {
+        fetch('/remove_from_wishlist', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `wishlist_id=${wishlistId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const wishlistItem = document.querySelector(`[data-wishlist-id="${wishlistId}"]`);
+                if (wishlistItem) {
+                    // Animate removal
+                    wishlistItem.style.transition = 'all 0.3s ease';
+                    wishlistItem.style.opacity = '0';
+                    wishlistItem.style.transform = 'translateY(-20px)';
+                    
+                    setTimeout(() => {
+                        wishlistItem.remove();
+                        
+                        // Check if wishlist is empty
+                        const remainingItems = document.querySelectorAll('.wishlist-item');
+                        if (remainingItems.length === 0) {
+                            location.reload(); // Reload to show empty state
+                        }
+                    }, 300);
+                }
+                showToast('Item removed from wishlist!', 'info');
+            } else {
+                showToast(data.message || 'Failed to remove from wishlist', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Failed to remove from wishlist', 'danger');
+        });
+    }
+}
+
+// Add all available items to cart
+function addAllToCart() {
+    const availableItems = document.querySelectorAll('.wishlist-item .btn-primary');
+    if (availableItems.length === 0) {
+        showToast('No available items to add to cart', 'warning');
+        return;
+    }
+    
+    if (confirm(`Add ${availableItems.length} items to your cart?`)) {
+        let addedCount = 0;
+        let totalItems = availableItems.length;
+        
+        availableItems.forEach(button => {
+            const wishlistItem = button.closest('.wishlist-item');
+            const productId = button.getAttribute('onclick').match(/addToCart\('(\d+)'\)/)[1];
+            
+            fetch('/add_to_cart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `product_id=${productId}&quantity=1`
+            })
+            .then(response => response.json())
+            .then(data => {
+                addedCount++;
+                if (addedCount === totalItems) {
+                    showToast(`${addedCount} items added to cart!`, 'success');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    }
+}
+
+// Share wishlist
+function shareWishlist() {
+    if (navigator.share) {
+        navigator.share({
+            title: 'My MediPlant Wishlist',
+            text: 'Check out my wishlist of medicinal plants and herbal products!',
+            url: window.location.href
+        });
+    } else {
+        // Fallback - copy URL to clipboard
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            showToast('Wishlist URL copied to clipboard!', 'success');
+        }).catch(() => {
+            showToast('Unable to share wishlist', 'danger');
+        });
+    }
+}
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'danger' ? 'danger' : type === 'warning' ? 'warning' : 'info'} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    // Add to toast container or create one
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        document.body.appendChild(toastContainer);
+    }
+    
+    toastContainer.appendChild(toast);
+    
+    // Show toast using Bootstrap
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    // Remove after shown
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+}
+</script>
+{% endblock %}

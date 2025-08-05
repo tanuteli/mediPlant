@@ -23,28 +23,41 @@ MediPlant is designed as a complete e-commerce solution specializing in authenti
 
 - **Frontend Templates**: All major HTML templates created with modern, responsive design
 - **User Interface**: Beautiful landing page with animations and interactive elements
-- **Authentication System**: Login, registration, and role-based access control templates
-- **Admin Dashboard**: Complete admin interface with user management and product control
+- **Authentication System**: Complete login, registration, and role-based access control
+- **Admin Dashboard**: Full admin interface with comprehensive management tools
+- **Database Integration**: Complete SQLite database with all necessary tables and relationships
+- **Backend Routes**: All API endpoints and business logic implemented
+- **Shopping Cart**: Full cart functionality with quantity management and pricing
+- **Order Management**: Complete order placement, tracking, and management system
+- **Review System**: Product ratings and reviews with average rating calculations
+- **Wishlist**: Save favorite products for later purchase
+- **Indian Pricing**: INR currency with GST (18%) and shipping calculations
+- **Admin CRUD**: Complete Create, Read, Update, Delete operations for all entities
+- **User Management**: Admin can manage user accounts and access levels
+- **Product Management**: Full product lifecycle management with image uploads
+- **Order Processing**: Complete order fulfillment and status tracking
 
 ### 🚧 **In Progress**
 
-- **Database Integration**: Models implementation and database initialization
-- **Backend Routes**: API endpoints and business logic implementation
-- **Payment Integration**: Razorpay/PayPal gateway setup
+- **Payment Integration**: Razorpay/PayPal gateway setup for live payments
+- **Advanced Analytics**: Enhanced reporting and business intelligence
+- **Mobile Optimization**: Further mobile responsive improvements
 
 ### 📋 **Planned Features**
 
-- **Search & Filtering**: Advanced product search with filters
-- **Analytics Dashboard**: Sales and performance reporting
-- **Review System**: Product ratings and reviews
+- **Search & Filtering**: Advanced product search with multiple filters
+- **Bulk Operations**: Admin bulk actions for products and orders
+- **Email Notifications**: Order confirmations and shipping updates
 
 ## ⚙️ Tech Stack
 
 | Layer       | Technology                   | Status |
 |-------------|------------------------------|--------|
 | Frontend    | HTML5, CSS3, Bootstrap 5, JS | ✅ Complete |
-| Backend     | Python (Flask)               | 🚧 In Progress |
-| Database    | MySQL / SQLite (dev)         | 🚧 In Progress |
+| Backend     | Python (Flask)               | ✅ Complete |
+| Database    | SQLite (dev) / MySQL (prod)  | ✅ Complete |
+| Currency    | Indian Rupees (INR)          | ✅ Complete |
+| Payments    | COD (Cash on Delivery)       | ✅ Complete |
 
 ## 🚀 Quick Start Guide
 
@@ -168,23 +181,24 @@ After running the sample data script:
 
 ### For Users 🛒
 
-- **Product Browsing**: Browse through various medicinal plants and herbal products
-- **Advanced Search**: Filter by category, price, and more
-- **Shopping Cart**: Add products and manage cart items
-- **Wishlist**: Save favorite products for later
-- **Order Tracking**: Track order status and delivery
-- **Reviews & Ratings**: Read and write product reviews
+- **Product Browsing**: Browse through various medicinal plants and herbal products with ratings
+- **Shopping Cart**: Add products, manage quantities, and calculate totals with GST
+- **Wishlist**: Save favorite products for later purchase with easy cart transfer
+- **Order Management**: Place orders, track status, and view order history
+- **Reviews & Ratings**: Write detailed product reviews and rate products (1-5 stars)
+- **Indian Pricing**: All prices in INR with 18% GST and ₹99 shipping (free above ₹2000)
+- **Secure Checkout**: Complete order placement with Indian address fields
 
 ### For Admins 👨‍💼
 
-- **Platform Oversight**: Monitor all platform activities
-- **User Management**: Manage user accounts and access
-- **Product Management**: Add, edit, and manage product listings
-- **Inventory Control**: Monitor stock levels and availability
-- **Order Processing**: Handle and fulfill customer orders
-- **Analytics Dashboard**: Platform-wide performance metrics
-- **Content Management**: Manage static content and policies
-- **Sales Reports**: View comprehensive sales data and insights
+- **Platform Oversight**: Monitor all platform activities and user interactions
+- **User Management**: Create, edit, delete user accounts and manage access levels
+- **Product Management**: Full CRUD operations for products with image upload support
+- **Inventory Control**: Monitor stock levels and manage product availability
+- **Order Processing**: View, update order status, and handle customer orders
+- **Analytics Dashboard**: Platform-wide performance metrics and insights
+- **Category Management**: Organize products into categories with full CRUD operations
+- **Review Moderation**: Monitor and manage user reviews and ratings
 - **Product Approval**: Control product quality and listings
 - **Pricing Management**: Set and update product prices
 
