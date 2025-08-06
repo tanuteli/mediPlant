@@ -540,8 +540,7 @@ function deleteProduct(productId, productName) {
         fetch(`/admin/products/${productId}/delete`, {
             method: 'DELETE',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
+                'Content-Type': 'application/json'
             }
         })
         .then(response => response.json())
@@ -550,11 +549,12 @@ function deleteProduct(productId, productName) {
                 showToast('Product deleted successfully', 'success');
                 location.reload();
             } else {
-                showToast('Error deleting product', 'error');
+                showToast('Error deleting product: ' + (data.message || 'Unknown error'), 'error');
             }
         })
         .catch(error => {
-            showToast('Error deleting product', 'error');
+            console.error('Error:', error);
+            showToast('Error deleting product: ' + error.message, 'error');
         });
     }
 }
@@ -777,13 +777,15 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 // Enhanced event listeners for better interaction
 document.addEventListener('DOMContentLoaded', function() {
-    // Delete product buttons
-    document.querySelectorAll('.delete-product-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const productId = this.dataset.productId;
-            const productName = this.dataset.productName;
+    // Delete product buttons - use event delegation to handle dynamically loaded content
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-product-btn')) {
+            e.preventDefault();
+            const btn = e.target.closest('.delete-product-btn');
+            const productId = btn.dataset.productId;
+            const productName = btn.dataset.productName;
             deleteProduct(productId, productName);
-        });
+        }
     });
 });
 </script>

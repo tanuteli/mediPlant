@@ -282,22 +282,42 @@ function removeFromCart(cartId) {
     if (confirm('Are you sure you want to remove this item from your cart?')) {
         const cartItem = document.querySelector(`[data-cart-id="${cartId}"]`);
         
-        // Animate removal
-        cartItem.style.transition = 'all 0.3s ease';
-        cartItem.style.opacity = '0';
-        cartItem.style.transform = 'translateX(-100%)';
-        
-        setTimeout(function() {
-            cartItem.remove();
-            updateCartTotals();
-            showToast('Item removed from cart!', 'info');
-            
-            // Check if cart is empty
-            const remainingItems = document.querySelectorAll('.cart-item');
-            if (remainingItems.length === 0) {
-                location.reload(); // Reload to show empty cart state
+        // Make AJAX request to remove item
+        fetch('/remove_from_cart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: `cart_id=${cartId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Animate removal
+                cartItem.style.transition = 'all 0.3s ease';
+                cartItem.style.opacity = '0';
+                cartItem.style.transform = 'translateX(-100%)';
+                
+                setTimeout(function() {
+                    cartItem.remove();
+                    updateCartTotals();
+                    showToast(data.message, 'success');
+                    
+                    // Check if cart is empty
+                    const remainingItems = document.querySelectorAll('.cart-item');
+                    if (remainingItems.length === 0) {
+                        location.reload(); // Reload to show empty cart state
+                    }
+                }, 300);
+            } else {
+                showToast(data.message, 'danger');
             }
-        }, 300);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error removing item from cart', 'danger');
+        });
     }
 }
 
@@ -458,19 +478,39 @@ function updateQuantity(cartId, newQuantity) {
     const quantityInput = cartItem.querySelector('.quantity-input');
     const priceElement = cartItem.querySelector('.item-price');
     
-    // Get base price
-    const basePrice = parseFloat(cartItem.querySelector('small').textContent.replace('Price: $', ''));
-    const newSubtotal = basePrice * newQuantity;
-    
-    // Update display
-    quantityInput.value = newQuantity;
-    priceElement.textContent = `$${newSubtotal.toFixed(2)}`;
-    
-    // Update totals
-    updateCartTotals();
-    
-    // Show feedback
-    showToast('Quantity updated!', 'success');
+    // Make AJAX request to update quantity
+    fetch('/update_cart_quantity', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: `cart_id=${cartId}&quantity=${newQuantity}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update display
+            quantityInput.value = newQuantity;
+            priceElement.textContent = `₹${data.new_subtotal.toFixed(2)}`;
+            
+            // Update totals
+            updateCartTotals();
+            
+            // Show feedback
+            showToast(data.message, 'success');
+        } else {
+            // Reset quantity on error
+            quantityInput.value = quantityInput.getAttribute('data-original-value') || 1;
+            showToast(data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Reset quantity on error
+        quantityInput.value = quantityInput.getAttribute('data-original-value') || 1;
+        showToast('Error updating quantity', 'danger');
+    });
 }
 
 // Auto-save cart (could be enhanced with AJAX)

@@ -24,7 +24,7 @@
                         <h6 class="m-0 font-weight-bold text-primary">Product Information</h6>
                     </div>
                     <div class="card-body">
-                        <form method="POST">
+                        <form method="POST" enctype="multipart/form-data">
                             <div class="row">
                                 <div class="col-md-8">
                                     <div class="mb-3">
@@ -93,10 +93,40 @@
                                 <textarea class="form-control" id="warnings" name="warnings" rows="3">{{ product.warnings }}</textarea>
                             </div>
                             
-                            <div class="mb-3">
-                                <label for="image_url" class="form-label">Image URL</label>
-                                <input type="url" class="form-control" id="image_url" name="image_url" 
-                                       value="{{ product.image_url }}">
+                            <!-- Product Image Section -->
+                            <div class="mb-4">
+                                <h6 class="fw-bold text-primary mb-3">
+                                    <i class="fas fa-images me-2"></i>Product Image
+                                </h6>
+                                
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label for="main_image" class="form-label">Upload New Image</label>
+                                            <input type="file" class="form-control" id="main_image" name="main_image" 
+                                                   accept="image/*">
+                                            <div class="form-text">Upload a new product image (JPG, PNG, WebP). Leave empty to keep current image.</div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="image_url" class="form-label">Or Image URL</label>
+                                            <input type="url" class="form-control" id="image_url" name="image_url" 
+                                                   value="{{ product.image_url }}" placeholder="https://example.com/image.jpg">
+                                            <div class="form-text">Alternatively, provide an image URL</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <label class="form-label">Current Image</label>
+                                        <div class="text-center">
+                                            <img id="preview-image" 
+                                                 src="{{ product.image_url or '/static/images/default-product.jpg' }}" 
+                                                 class="img-thumbnail" 
+                                                 style="max-width: 150px; max-height: 150px;"
+                                                 alt="Product image">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             
                             <div class="mb-3">
@@ -128,8 +158,10 @@
                     </div>
                     <div class="card-body">
                         <div class="product-preview">
-                            <img id="preview-image" src="{{ product.image_url or '/static/images/default-product.jpg' }}" 
-                                 alt="Product Preview" class="img-fluid rounded mb-3">
+                            <div class="text-center mb-3">
+                                <img id="preview-image-sidebar" src="{{ product.image_url or '/static/images/default-product.jpg' }}" 
+                                     alt="Product Preview" class="img-fluid rounded" style="max-height: 200px;">
+                            </div>
                             
                             <h5 id="preview-name">{{ product.name }}</h5>
                             <p id="preview-price" class="text-success fw-bold">₹{{ "%.2f"|format(product.price) }}</p>
@@ -189,7 +221,25 @@ document.getElementById('description').addEventListener('input', function() {
 });
 
 document.getElementById('image_url').addEventListener('input', function() {
-    document.getElementById('preview-image').src = this.value || '/static/images/default-product.jpg';
+    const imageUrl = this.value || '/static/images/default-product.jpg';
+    document.getElementById('preview-image').src = imageUrl;
+    document.getElementById('preview-image-sidebar').src = imageUrl;
+});
+
+// File upload preview
+document.getElementById('main_image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview-image').src = e.target.result;
+            document.getElementById('preview-image-sidebar').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+        
+        // Clear URL field when file is selected
+        document.getElementById('image_url').value = '';
+    }
 });
 
 document.getElementById('stock_quantity').addEventListener('input', function() {

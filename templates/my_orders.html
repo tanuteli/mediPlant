@@ -19,6 +19,44 @@
         </div>
     </div>
 
+    <!-- Order Statistics -->
+    {% if user_stats %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-soft bg-light border-0">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-2 col-4 mb-3">
+                            <h4 class="text-primary mb-1">{{ user_stats.total_orders }}</h4>
+                            <small class="text-muted">Total Orders</small>
+                        </div>
+                        <div class="col-md-2 col-4 mb-3">
+                            <h4 class="text-warning mb-1">{{ user_stats.pending_orders }}</h4>
+                            <small class="text-muted">Pending</small>
+                        </div>
+                        <div class="col-md-2 col-4 mb-3">
+                            <h4 class="text-info mb-1">{{ user_stats.processing_orders }}</h4>
+                            <small class="text-muted">Processing</small>
+                        </div>
+                        <div class="col-md-2 col-4 mb-3">
+                            <h4 class="text-primary mb-1">{{ user_stats.shipped_orders }}</h4>
+                            <small class="text-muted">Shipped</small>
+                        </div>
+                        <div class="col-md-2 col-4 mb-3">
+                            <h4 class="text-success mb-1">{{ user_stats.delivered_orders }}</h4>
+                            <small class="text-muted">Delivered</small>
+                        </div>
+                        <div class="col-md-2 col-4 mb-3">
+                            <h4 class="text-danger mb-1">{{ user_stats.total_spent|inr }}</h4>
+                            <small class="text-muted">Total Spent</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     {% if orders %}
         <!-- Orders List -->
         <div class="row">
@@ -29,21 +67,21 @@
                         <div>
                             <h6 class="mb-1 fw-bold">Order #{{ order.id }}</h6>
                             <small class="text-muted">
-                                <i class="fas fa-calendar me-1"></i>Placed on {{ order.created_at }}
+                                <i class="fas fa-calendar me-1"></i>{{ order.created_at_formatted or order.created_at }}
                             </small>
                         </div>
                         <div class="text-end">
                             <span class="badge 
                                 {% if order.status == 'pending' %}bg-warning
-                                {% elif order.status == 'confirmed' %}bg-info  
+                                {% elif order.status == 'confirmed' or order.status == 'processing' %}bg-info  
                                 {% elif order.status == 'shipped' %}bg-primary
                                 {% elif order.status == 'delivered' %}bg-success
                                 {% elif order.status == 'cancelled' %}bg-danger
                                 {% else %}bg-secondary{% endif %} fs-6">
                                 {% if order.status == 'pending' %}
                                     <i class="fas fa-clock me-1"></i>Pending
-                                {% elif order.status == 'confirmed' %}
-                                    <i class="fas fa-check me-1"></i>Confirmed
+                                {% elif order.status == 'confirmed' or order.status == 'processing' %}
+                                    <i class="fas fa-check me-1"></i>{{ order.status.title() }}
                                 {% elif order.status == 'shipped' %}
                                     <i class="fas fa-truck me-1"></i>Shipped
                                 {% elif order.status == 'delivered' %}
@@ -58,53 +96,95 @@
                     </div>
                     <div class="card-body">
                         <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-box text-primary me-2"></i>
-                                    <span><strong>{{ order.item_count }}</strong> item{% if order.item_count != 1 %}s{% endif %}</span>
+                            <div class="col-md-2 col-4">
+                                {% if order.first_product_image %}
+                                    <img src="{{ order.first_product_image }}" alt="Product" 
+                                         class="img-fluid rounded shadow-sm" 
+                                         style="width: 80px; height: 80px; object-fit: cover;">
+                                {% else %}
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center shadow-sm" 
+                                         style="width: 80px; height: 80px;">
+                                        <i class="fas fa-seedling text-primary fa-2x"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 col-8">
+                                <div class="mb-2">
+                                    {% if order.product_names_list %}
+                                        {% for product_name in order.product_names_list %}
+                                            <span class="d-block fw-medium">{{ product_name }}</span>
+                                        {% endfor %}
+                                        {% if order.more_products > 0 %}
+                                            <small class="text-muted">and {{ order.more_products }} more item(s)</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">No product details available</span>
+                                    {% endif %}
                                 </div>
+                                <small class="text-muted">
+                                    <i class="fas fa-cube me-1"></i>{{ order.total_items or 0 }} item(s) in {{ order.item_count or 0 }} product(s)
+                                </small>
                                 
                                 {% if order.tracking_number %}
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-shipping-fast text-info me-2"></i>
-                                    <span>Tracking: <strong>{{ order.tracking_number }}</strong></span>
+                                <div class="mt-2">
+                                    <small class="text-info">
+                                        <i class="fas fa-shipping-fast me-1"></i>Tracking: <strong>{{ order.tracking_number }}</strong>
+                                    </small>
                                 </div>
                                 {% endif %}
-                                
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-rupee-sign text-success me-2"></i>
-                                    <span>Total: <strong>{{ order.total_amount|inr }}</strong></span>
-                                </div>
                             </div>
                             <div class="col-md-4 text-end">
-                                <a href="{{ url_for('order_detail', order_id=order.id) }}" 
-                                   class="btn btn-outline-primary me-2">
-                                    <i class="fas fa-eye me-1"></i>View Details
-                                </a>
-                                
-                                {% if order.status == 'delivered' %}
-                                <button class="btn btn-outline-success" onclick="downloadInvoice({{ order.id }})">
-                                    <i class="fas fa-download me-1"></i>Invoice
-                                </button>
+                                <h5 class="text-success mb-2">{{ order.total_amount|inr }}</h5>
+                                {% if order.payment_method %}
+                                    <small class="text-muted d-block">{{ order.payment_method.title() }}</small>
                                 {% endif %}
                                 
-                                {% if order.status == 'pending' %}
-                                <button class="btn btn-outline-danger" onclick="cancelOrder({{ order.id }})">
-                                    <i class="fas fa-times me-1"></i>Cancel
-                                </button>
-                                {% endif %}
+                                <div class="mt-3 d-flex flex-wrap gap-2 justify-content-end">
+                                    <a href="{{ url_for('order_detail', order_id=order.id) }}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye me-1"></i>View Details
+                                    </a>
+                                    
+                                    {% if order.status == 'delivered' %}
+                                    <button class="btn btn-outline-success btn-sm" onclick="downloadInvoice({{ order.id }})">
+                                        <i class="fas fa-download me-1"></i>Invoice
+                                    </button>
+                                    {% endif %}
+                                    
+                                    {% if order.status == 'pending' %}
+                                    <button class="btn btn-outline-danger btn-sm" onclick="cancelOrder({{ order.id }})">
+                                        <i class="fas fa-times me-1"></i>Cancel
+                                    </button>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                         
+                        <!-- Shipping Address (if available) -->
+                        {% if order.shipping_address %}
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="bg-light rounded p-3">
+                                    <h6 class="mb-2"><i class="fas fa-map-marker-alt me-2"></i>Shipping Address</h6>
+                                    <address class="mb-0">
+                                        {{ order.shipping_address }}<br>
+                                        {% if order.city %}{{ order.city }}{% endif %}{% if order.state %}, {{ order.state }}{% endif %}{% if order.postal_code %} - {{ order.postal_code }}{% endif %}<br>
+                                        {% if order.phone %}<i class="fas fa-phone me-1"></i>{{ order.phone }}{% endif %}
+                                    </address>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
                         <!-- Order Progress -->
-                        {% if order.status in ['confirmed', 'shipped', 'delivered'] %}
+                        {% if order.status in ['confirmed', 'processing', 'shipped', 'delivered'] %}
                         <div class="row mt-3">
                             <div class="col-12">
                                 <div class="order-progress">
                                     <div class="progress mb-2">
                                         <div class="progress-bar bg-success" role="progressbar" 
                                              style="width: 
-                                             {% if order.status == 'confirmed' %}33%
+                                             {% if order.status in ['confirmed', 'processing'] %}33%
                                              {% elif order.status == 'shipped' %}66%
                                              {% elif order.status == 'delivered' %}100%
                                              {% else %}0%{% endif %}" 
@@ -112,7 +192,7 @@
                                     </div>
                                     <div class="row text-center">
                                         <div class="col-4">
-                                            <small class="text-{% if order.status in ['confirmed', 'shipped', 'delivered'] %}success{% else %}muted{% endif %}">
+                                            <small class="text-{% if order.status in ['confirmed', 'processing', 'shipped', 'delivered'] %}success{% else %}muted{% endif %}">
                                                 <i class="fas fa-check-circle"></i> Confirmed
                                             </small>
                                         </div>

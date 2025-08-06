@@ -1,5 +1,8 @@
 import os
 import sqlite3
+import uuid
+import random
+import string
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -472,112 +475,302 @@ def add_to_cart():
     flash('Product added to cart!', 'success')
     return redirect(url_for('product_detail', product_id=product_id))
 
+@app.route('/remove_from_cart', methods=['POST'])
+@login_required
+def remove_from_cart():
+    cart_id = request.form.get('cart_id')
+    
+    if not cart_id:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'Cart ID is required'})
+        flash('Invalid request.', 'danger')
+        return redirect(url_for('cart'))
+    
+    conn = get_db_connection()
+    
+    # Verify the cart item belongs to the current user
+    cart_item = conn.execute('''
+        SELECT * FROM cart WHERE id = ? AND user_id = ?
+    ''', (cart_id, session['user_id'])).fetchone()
+    
+    if cart_item:
+        conn.execute('DELETE FROM cart WHERE id = ?', (cart_id,))
+        conn.commit()
+        success = True
+        message = 'Item removed from cart!'
+    else:
+        success = False
+        message = 'Item not found or access denied'
+    
+    conn.close()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': success, 'message': message})
+    
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('cart'))
+
+@app.route('/update_cart_quantity', methods=['POST'])
+@login_required
+def update_cart_quantity():
+    cart_id = request.form.get('cart_id')
+    new_quantity = request.form.get('quantity')
+    
+    if not cart_id or not new_quantity:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'Cart ID and quantity are required'})
+        flash('Invalid request.', 'danger')
+        return redirect(url_for('cart'))
+    
+    try:
+        new_quantity = int(new_quantity)
+        if new_quantity < 1:
+            raise ValueError("Quantity must be at least 1")
+    except ValueError:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'Invalid quantity'})
+        flash('Invalid quantity.', 'danger')
+        return redirect(url_for('cart'))
+    
+    conn = get_db_connection()
+    
+    # Verify the cart item belongs to the current user
+    cart_item = conn.execute('''
+        SELECT c.*, p.price FROM cart c
+        JOIN products p ON c.product_id = p.id
+        WHERE c.id = ? AND c.user_id = ?
+    ''', (cart_id, session['user_id'])).fetchone()
+    
+    if cart_item:
+        conn.execute('UPDATE cart SET quantity = ? WHERE id = ?', (new_quantity, cart_id))
+        conn.commit()
+        new_subtotal = float(cart_item['price']) * new_quantity
+        success = True
+        message = 'Quantity updated!'
+    else:
+        success = False
+        message = 'Item not found or access denied'
+        new_subtotal = 0
+    
+    conn.close()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({
+            'success': success, 
+            'message': message,
+            'new_subtotal': new_subtotal
+        })
+    
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('cart'))
+
 @app.route('/cart')
 @login_required
 def cart():
     conn = get_db_connection()
     
+    # Get cart items with product details and stock verification
     cart_items = conn.execute('''
-        SELECT c.*, p.name, p.price, p.image_url, (c.quantity * p.price) as subtotal
+        SELECT c.*, p.name, p.price, p.image_url, p.stock_quantity,
+               (c.quantity * p.price) as subtotal
         FROM cart c
         JOIN products p ON c.product_id = p.id
-        WHERE c.user_id = ?
+        WHERE c.user_id = ? AND p.is_active = 1
+        ORDER BY c.created_at DESC
     ''', (session['user_id'],)).fetchall()
     
-    subtotal = sum(item['subtotal'] for item in cart_items)
-    order_totals = calculate_order_total(subtotal)
+    # Remove items that are out of stock
+    valid_items = []
+    for item in cart_items:
+        if item['stock_quantity'] < item['quantity']:
+            # Update cart quantity to available stock
+            if item['stock_quantity'] > 0:
+                conn.execute('''
+                    UPDATE cart SET quantity = ? 
+                    WHERE user_id = ? AND product_id = ?
+                ''', (item['stock_quantity'], session['user_id'], item['product_id']))
+                # Update the item for display
+                item = dict(item)
+                item['quantity'] = item['stock_quantity']
+                item['subtotal'] = item['quantity'] * item['price']
+                valid_items.append(item)
+                flash(f'Updated {item["name"]} quantity to available stock ({item["stock_quantity"]})', 'warning')
+            else:
+                # Remove out of stock item
+                conn.execute('''
+                    DELETE FROM cart 
+                    WHERE user_id = ? AND product_id = ?
+                ''', (session['user_id'], item['product_id']))
+                flash(f'{item["name"]} is out of stock and removed from cart', 'warning')
+        else:
+            valid_items.append(item)
+    
+    conn.commit()
+    
+    # Calculate totals
+    if valid_items:
+        subtotal = sum(item['subtotal'] for item in valid_items)
+        order_totals = calculate_order_total(subtotal)
+    else:
+        subtotal = 0
+        order_totals = {'subtotal': 0, 'gst': 0, 'shipping': 0, 'total': 0}
     
     conn.close()
-    return render_template('cart.html', cart_items=cart_items, **order_totals)
+    
+    return render_template('cart.html', 
+                         cart_items=valid_items,
+                         **order_totals)
 
 @app.route('/checkout')
 @login_required
 def checkout():
     conn = get_db_connection()
     
+    # Get cart items with stock verification
     cart_items = conn.execute('''
-        SELECT c.*, p.name, p.price, p.image_url, (c.quantity * p.price) as subtotal
+        SELECT c.*, p.name, p.price, p.image_url, p.stock_quantity,
+               (c.quantity * p.price) as subtotal
         FROM cart c
         JOIN products p ON c.product_id = p.id
-        WHERE c.user_id = ?
+        WHERE c.user_id = ? AND p.is_active = 1
+        ORDER BY c.created_at ASC
     ''', (session['user_id'],)).fetchall()
     
     if not cart_items:
-        flash('Your cart is empty.', 'warning')
+        flash('Your cart is empty. Add some products to proceed with checkout.', 'warning')
+        conn.close()
         return redirect(url_for('cart'))
     
-    subtotal = sum(item['subtotal'] for item in cart_items)
+    # Verify stock availability
+    stock_issues = []
+    valid_items = []
+    
+    for item in cart_items:
+        if item['stock_quantity'] < item['quantity']:
+            if item['stock_quantity'] > 0:
+                stock_issues.append(f'{item["name"]} - only {item["stock_quantity"]} available')
+                # Update cart to available quantity
+                conn.execute('''
+                    UPDATE cart SET quantity = ? 
+                    WHERE user_id = ? AND product_id = ?
+                ''', (item['stock_quantity'], session['user_id'], item['product_id']))
+                # Update item for calculation
+                item = dict(item)
+                item['quantity'] = item['stock_quantity']
+                item['subtotal'] = item['quantity'] * item['price']
+                valid_items.append(item)
+            else:
+                stock_issues.append(f'{item["name"]} - out of stock')
+                conn.execute('''
+                    DELETE FROM cart 
+                    WHERE user_id = ? AND product_id = ?
+                ''', (session['user_id'], item['product_id']))
+        else:
+            valid_items.append(item)
+    
+    if stock_issues:
+        for issue in stock_issues:
+            flash(issue, 'warning')
+        conn.commit()
+        conn.close()
+        return redirect(url_for('cart'))
+    
+    # Calculate order totals
+    subtotal = sum(item['subtotal'] for item in valid_items)
     order_totals = calculate_order_total(subtotal)
     
     conn.close()
-    return render_template('checkout.html', cart_items=cart_items, **order_totals)
+    
+    return render_template('checkout.html', 
+                         cart_items=valid_items,
+                         **order_totals)
 
 @app.route('/place_order', methods=['POST'])
 @login_required
 def place_order():
+    # Validate form data
+    required_fields = ['shipping_address', 'city', 'state', 'postal_code', 'phone']
+    for field in required_fields:
+        if not request.form.get(field):
+            flash(f'Please provide {field.replace("_", " ").title()}', 'danger')
+            return redirect(url_for('checkout'))
+    
     shipping_address = request.form['shipping_address']
-    city = request.form.get('city', '')
-    state = request.form.get('state', '')
-    postal_code = request.form.get('postal_code', '')
-    phone = request.form.get('phone', '')
+    city = request.form['city']
+    state = request.form['state']
+    postal_code = request.form['postal_code']
+    phone = request.form['phone']
     payment_method = request.form.get('payment_method', 'cod')
     
     conn = get_db_connection()
     
-    # Get cart items
-    cart_items = conn.execute('''
-        SELECT c.*, p.price, p.name
-        FROM cart c
-        JOIN products p ON c.product_id = p.id
-        WHERE c.user_id = ?
-    ''', (session['user_id'],)).fetchall()
-    
-    if not cart_items:
-        flash('Your cart is empty.', 'warning')
-        conn.close()
-        return redirect(url_for('cart'))
-    
-    # Calculate total with taxes and shipping
-    subtotal = sum(item['quantity'] * item['price'] for item in cart_items)
-    order_totals = calculate_order_total(subtotal)
-    final_total = order_totals['total']
-    
-    # Generate tracking number
-    import random
-    import string
-    tracking_number = 'MP' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-    
-    # Create order with final total
-    cursor = conn.execute('''
-        INSERT INTO orders (user_id, total_amount, shipping_address, city, state, 
-                          postal_code, phone, payment_method, tracking_number)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (session['user_id'], final_total, shipping_address, city, state, postal_code, 
-          phone, payment_method, tracking_number))
-    
-    order_id = cursor.lastrowid
-    
-    # Add order items
-    for item in cart_items:
-        conn.execute('''
-            INSERT INTO order_items (order_id, product_id, quantity, price)
-            VALUES (?, ?, ?, ?)
-        ''', (order_id, item['product_id'], item['quantity'], item['price']))
+    try:
+        # Get cart items with final stock check
+        cart_items = conn.execute('''
+            SELECT c.*, p.price, p.name, p.stock_quantity
+            FROM cart c
+            JOIN products p ON c.product_id = p.id
+            WHERE c.user_id = ? AND p.is_active = 1
+        ''', (session['user_id'],)).fetchall()
         
-        # Update stock quantity
-        conn.execute('''
-            UPDATE products SET stock_quantity = stock_quantity - ?
-            WHERE id = ?
-        ''', (item['quantity'], item['product_id']))
-    
-    # Clear cart
-    conn.execute('DELETE FROM cart WHERE user_id = ?', (session['user_id'],))
-    
-    conn.commit()
-    conn.close()
-    
-    flash('Order placed successfully! Check your orders to track delivery.', 'success')
-    return redirect(url_for('my_orders'))
+        if not cart_items:
+            flash('Your cart is empty.', 'warning')
+            conn.close()
+            return redirect(url_for('cart'))
+        
+        # Final stock validation
+        for item in cart_items:
+            if item['stock_quantity'] < item['quantity']:
+                flash(f'Insufficient stock for {item["name"]}. Please update your cart.', 'danger')
+                conn.close()
+                return redirect(url_for('cart'))
+        
+        # Calculate final totals
+        subtotal = sum(item['quantity'] * item['price'] for item in cart_items)
+        order_totals = calculate_order_total(subtotal)
+        final_total = order_totals['total']
+        
+        # Generate tracking number
+        tracking_number = 'MP' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        
+        # Create order
+        cursor = conn.execute('''
+            INSERT INTO orders (user_id, total_amount, shipping_address, city, state, 
+                              postal_code, phone, payment_method, tracking_number, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (session['user_id'], final_total, shipping_address, city, state, postal_code, 
+              phone, payment_method, tracking_number, 'pending'))
+        
+        order_id = cursor.lastrowid
+        
+        # Add order items and update stock
+        for item in cart_items:
+            # Insert order item
+            conn.execute('''
+                INSERT INTO order_items (order_id, product_id, quantity, price)
+                VALUES (?, ?, ?, ?)
+            ''', (order_id, item['product_id'], item['quantity'], item['price']))
+            
+            # Update product stock
+            conn.execute('''
+                UPDATE products SET stock_quantity = stock_quantity - ?
+                WHERE id = ?
+            ''', (item['quantity'], item['product_id']))
+        
+        # Clear user's cart
+        conn.execute('DELETE FROM cart WHERE user_id = ?', (session['user_id'],))
+        
+        conn.commit()
+        conn.close()
+        
+        flash(f'Order #{order_id} placed successfully! Your tracking number is {tracking_number}', 'success')
+        return redirect(url_for('my_orders'))
+        
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        flash('An error occurred while placing your order. Please try again.', 'danger')
+        return redirect(url_for('checkout'))
 
 @app.route('/order_confirmation/<int:order_id>')
 @login_required
@@ -614,35 +807,108 @@ def my_orders():
     
     conn = get_db_connection()
     
-    # Get user's orders
-    orders = conn.execute('''
-        SELECT o.*, COUNT(oi.id) as item_count
-        FROM orders o
-        LEFT JOIN order_items oi ON o.id = oi.order_id
-        WHERE o.user_id = ?
-        GROUP BY o.id
-        ORDER BY o.created_at DESC
-        LIMIT ? OFFSET ?
-    ''', (session['user_id'], per_page, offset)).fetchall()
+    try:
+        # Simple and reliable query to get user orders
+        orders = conn.execute('''
+            SELECT o.id, o.total_amount, o.status, o.shipping_address, o.city, o.state, 
+                   o.postal_code, o.phone, o.payment_method, o.payment_status,
+                   o.tracking_number, o.created_at
+            FROM orders o
+            WHERE o.user_id = ?
+            ORDER BY o.created_at DESC
+            LIMIT ? OFFSET ?
+        ''', (session['user_id'], per_page, offset)).fetchall()
+        
+        # Process orders and get additional data
+        orders_list = []
+        for order in orders:
+            order_dict = dict(order)
+            
+            # Get order items for this order
+            order_items = conn.execute('''
+                SELECT oi.quantity, oi.price, p.name, p.image_url
+                FROM order_items oi
+                JOIN products p ON oi.product_id = p.id
+                WHERE oi.order_id = ?
+            ''', (order['id'],)).fetchall()
+            
+            # Calculate totals and product info
+            total_items = sum(item['quantity'] for item in order_items)
+            item_count = len(order_items)
+            
+            order_dict['total_items'] = total_items
+            order_dict['item_count'] = item_count
+            
+            # Get product names (first 3)
+            product_names = [item['name'] for item in order_items]
+            order_dict['product_names_list'] = product_names[:3]
+            order_dict['more_products'] = max(0, len(product_names) - 3)
+            
+            # Get first product image
+            if order_items and order_items[0]['image_url']:
+                order_dict['first_product_image'] = order_items[0]['image_url']
+            else:
+                order_dict['first_product_image'] = '/static/images/default-product.jpg'
+            
+            # Format created_at for better display
+            if order_dict['created_at']:
+                try:
+                    from datetime import datetime
+                    if isinstance(order_dict['created_at'], str):
+                        created_date = datetime.strptime(order_dict['created_at'], '%Y-%m-%d %H:%M:%S')
+                    else:
+                        created_date = order_dict['created_at']
+                    order_dict['created_at_formatted'] = created_date.strftime('%B %d, %Y at %I:%M %p')
+                except Exception as date_error:
+                    order_dict['created_at_formatted'] = str(order_dict['created_at'])
+            else:
+                order_dict['created_at_formatted'] = 'Unknown'
+            
+            orders_list.append(order_dict)
+        
+        # Get total count for pagination
+        total_orders = conn.execute('''
+            SELECT COUNT(*) as count FROM orders WHERE user_id = ?
+        ''', (session['user_id'],)).fetchone()['count']
+        
+        # Get user statistics
+        user_stats = conn.execute('''
+            SELECT 
+                COUNT(*) as total_orders,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
+                SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing_orders,
+                SUM(CASE WHEN status = 'shipped' THEN 1 ELSE 0 END) as shipped_orders,
+                SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) as delivered_orders,
+                SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders,
+                COALESCE(SUM(total_amount), 0) as total_spent
+            FROM orders WHERE user_id = ?
+        ''', (session['user_id'],)).fetchone()
+        
+        conn.close()
+        
+        # Calculate pagination
+        total_pages = (total_orders + per_page - 1) // per_page if total_orders > 0 else 1
+        has_prev = page > 1
+        has_next = page < total_pages
+        
+        return render_template('my_orders.html', 
+                             orders=orders_list,
+                             user_stats=user_stats,
+                             page=page, 
+                             total_pages=total_pages,
+                             has_prev=has_prev, 
+                             has_next=has_next,
+                             total_orders=total_orders)
     
-    # Get total count for pagination
-    total_orders = conn.execute('''
-        SELECT COUNT(*) as count FROM orders WHERE user_id = ?
-    ''', (session['user_id'],)).fetchone()['count']
-    
-    conn.close()
-    
-    # Calculate pagination
-    total_pages = (total_orders + per_page - 1) // per_page
-    has_prev = page > 1
-    has_next = page < total_pages
-    
-    return render_template('my_orders.html', 
-                         orders=orders, 
-                         page=page, 
-                         total_pages=total_pages,
-                         has_prev=has_prev, 
-                         has_next=has_next)
+    except Exception as e:
+        print(f"Error in my_orders: {e}")
+        import traceback
+        traceback.print_exc()
+        if 'conn' in locals():
+            conn.close()
+        flash('Error loading orders. Please try again.', 'danger')
+        return redirect(url_for('index'))
+
 
 @app.route('/order_detail/<int:order_id>')
 @login_required
@@ -884,11 +1150,21 @@ def cancel_order(order_id):
     if order['status'] != 'pending':
         return jsonify({'success': False, 'message': 'Order cannot be cancelled'})
     
+    # Get reason from JSON or form data, default to customer cancellation
+    reason = 'Cancelled by customer'
+    try:
+        if request.is_json and request.json:
+            reason = request.json.get('reason', reason)
+        elif request.form:
+            reason = request.form.get('reason', reason)
+    except:
+        pass
+    
     # Update order status
     conn.execute('''
         UPDATE orders SET status = 'cancelled', notes = ?
         WHERE id = ?
-    ''', (request.json.get('reason', 'Cancelled by customer'), order_id))
+    ''', (reason, order_id))
     
     # Restore stock quantities
     order_items = conn.execute('''
@@ -976,6 +1252,7 @@ def admin_products():
         SELECT p.*, c.name as category_name
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.id
+        WHERE p.is_active = 1
         ORDER BY p.created_at DESC
     ''').fetchall()
     
@@ -1167,15 +1444,88 @@ def admin_add_user():
 @app.route('/admin/orders')
 @admin_required
 def admin_orders():
+    # Get filter parameters
+    status_filter = request.args.get('status', '')
+    search_query = request.args.get('search', '')
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    offset = (page - 1) * per_page
+    
     conn = get_db_connection()
-    orders = conn.execute('''
-        SELECT o.*, u.full_name, u.email, u.phone
+    
+    # Build query with filters
+    base_query = '''
+        SELECT o.*, u.full_name, u.email, u.phone,
+               COUNT(oi.id) as item_count,
+               SUM(oi.quantity) as total_items
         FROM orders o
         JOIN users u ON o.user_id = u.id
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+    '''
+    
+    conditions = []
+    params = []
+    
+    if status_filter:
+        conditions.append('o.status = ?')
+        params.append(status_filter)
+    
+    if search_query:
+        conditions.append('(u.full_name LIKE ? OR u.email LIKE ? OR o.tracking_number LIKE ?)')
+        search_param = f'%{search_query}%'
+        params.extend([search_param, search_param, search_param])
+    
+    where_clause = ' WHERE ' + ' AND '.join(conditions) if conditions else ''
+    
+    # Get orders with pagination
+    orders_query = base_query + where_clause + '''
+        GROUP BY o.id
         ORDER BY o.created_at DESC
-    ''').fetchall()
+        LIMIT ? OFFSET ?
+    '''
+    params.extend([per_page, offset])
+    
+    orders = conn.execute(orders_query, params).fetchall()
+    
+    # Get total count for pagination
+    count_query = '''
+        SELECT COUNT(DISTINCT o.id) as count
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+    ''' + where_clause
+    
+    total_orders = conn.execute(count_query, params[:-2]).fetchone()['count']
+    
+    # Get order statistics
+    stats = conn.execute('''
+        SELECT 
+            COUNT(*) as total_orders,
+            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
+            SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing_orders,
+            SUM(CASE WHEN status = 'shipped' THEN 1 ELSE 0 END) as shipped_orders,
+            SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) as delivered_orders,
+            SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders,
+            SUM(total_amount) as total_revenue
+        FROM orders
+    ''').fetchone()
+    
     conn.close()
-    return render_template('admin/orders.html', orders=orders)
+    
+    # Calculate pagination
+    total_pages = (total_orders + per_page - 1) // per_page if total_orders > 0 else 1
+    has_prev = page > 1
+    has_next = page < total_pages
+    
+    return render_template('admin/orders.html', 
+                         orders=orders,
+                         stats=stats,
+                         page=page,
+                         total_pages=total_pages,
+                         has_prev=has_prev,
+                         has_next=has_next,
+                         status_filter=status_filter,
+                         search_query=search_query,
+                         total_orders=total_orders)
 
 @app.route('/admin/order/<int:order_id>')
 @admin_required
@@ -1385,6 +1735,19 @@ def admin_delete_product(product_id):
     
     flash('Product deactivated successfully!', 'success')
     return redirect(url_for('admin_products'))
+
+@app.route('/admin/products/<int:product_id>/delete', methods=['DELETE'])
+@admin_required
+def admin_delete_product_api(product_id):
+    try:
+        conn = get_db_connection()
+        conn.execute('UPDATE products SET is_active = 0 WHERE id = ?', (product_id,))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Product deleted successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/admin/analytics')
 @admin_required
