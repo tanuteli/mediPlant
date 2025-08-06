@@ -107,6 +107,17 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+@app.context_processor
+def inject_categories():
+    """Make categories available to all templates"""
+    try:
+        conn = get_db_connection()
+        categories = conn.execute('SELECT * FROM categories ORDER BY name').fetchall()
+        conn.close()
+        return dict(categories=categories)
+    except:
+        return dict(categories=[])
+
 def init_db():
     conn = get_db_connection()
     

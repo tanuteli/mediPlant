@@ -45,12 +45,9 @@
                             <i class="fas fa-th-large me-1"></i>Categories
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('products', category=1) }}">Herbs & Spices</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('products', category=2) }}">Medicinal Plants</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('products', category=3) }}">Aromatic Plants</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('products', category=4) }}">Ayurvedic Herbs</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('products', category=5) }}">Herbal Teas</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('products', category=6) }}">Essential Oils</a></li>
+                            {% for category in categories %}
+                            <li><a class="dropdown-item" href="{{ url_for('products', category=category.id) }}">{{ category.name }}</a></li>
+                            {% endfor %}
                         </ul>
                     </li>
                 </ul>
